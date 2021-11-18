@@ -40,6 +40,7 @@ Entire tutorial on machine learning with time series (https://www.youtube.com/wa
         - LSTM !! especially suited for time series data
     - Transformers
 
-- Random forest
-- Boosted trees
-- SVM / Logistic reg
+- Use times series specific packages (such as sktime) to use the fact that points in a time series are time-dependent and not i.i.d distributed
+    - Random forest
+    - Boosted trees
+    - SVM / Logistic reg
