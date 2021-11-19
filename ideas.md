@@ -13,6 +13,8 @@ Compilation of thoughts and notes on the project
 5. Can you distinguish between encoding the same polymer with '0' or '6'? => the difference in the molecule is very small it would indicate a high sensitivity of the method.
 (I didn't send the ones with only '0' and only '6' yet but we should have the data) Which encoding is the easiest to read/classify?
 
+6. Choose the best architecture
+
 ## Data details
 
 How to deal with varied length inputs when training and classifying ?
@@ -44,6 +46,7 @@ extract local extrema
         - LSTM !! especially suited for time series data
     - Transformers
 
+	(https://github.com/sktime/sktime-dl)
 	Time convolutional neural network (CNN)
 	Encoder (Encoder)
 	Fully convolutional neural network (FCNN)
@@ -56,6 +59,7 @@ extract local extrema
 
 - Use times series specific packages (such as sktime) to use the fact that points in a time series are time-dependent and not i.i.d distributed
 
+	(https://towardsdatascience.com/a-brief-introduction-to-time-series-classification-algorithms-7b4284d31b97)
     	Distance-based (KNN with dynamic time warping)
 	Interval-based (TimeSeriesForest)
 	Dictionary-based (BOSS, cBOSS)
