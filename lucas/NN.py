@@ -314,12 +314,12 @@ class LSTM(nn.Module):
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
 
-    def train(dataset, num_features, num_blocks, hidden_dim, num_epochs, batch_size, lr=0.1, verbose="v"):
+    def train(dataset, num_features, num_blocks, hidden_dim, num_epochs, batch_size, lr=0.001, verbose="v"):
 
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         model = LSTM(input_dim = num_features, num_layers= num_blocks ,hidden_dim = hidden_dim)
         loss_function = torch.nn.NLLLoss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
         for epoch in range(num_epochs):
             num_correct = 0
@@ -331,7 +331,7 @@ class LSTM(nn.Module):
                 optimizer.step()
                 preds = torch.argmax(probs, dim=1, keepdim=False)
                 num_correct += (preds == y).sum()
-            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==num_epochs :
+            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==num_epochs -1 :
                 print(f'epoch={epoch}/{num_epochs - 1}, loss={loss}, accuracy={num_correct*100/len(dataset)}')
 
 
