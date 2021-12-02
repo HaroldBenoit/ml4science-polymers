@@ -323,7 +323,7 @@ class LSTM(nn.Module):
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
 
-    def train(dataset, num_features, num_blocks, hidden_dim, num_epochs, batch_size, lr=0.1, verbose="v"):
+    def train(dataset, num_features, num_blocks, hidden_dim, num_epochs, batch_size, lr=0.001, verbose="v"):
 
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
         model = LSTM(input_dim = num_features, num_layers= num_blocks ,hidden_dim = hidden_dim)
