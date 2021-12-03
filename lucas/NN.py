@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
+from statsmodels.tsa.stattools import acf
+
 
 plt.style.use('ggplot')
 plt.rcParams['figure.figsize'] = (15,7)
@@ -63,7 +65,7 @@ def min_slope(row):
     return minslope
     
 class Input():
-    def __init__(self, raw_series,num_blocks,label):
+    def __init__(self, raw_series,num_blocks,label, auto_corr):
         """ Initilaizes an input object from a raw time series i.e. an input suitable to feed to a recurrent neural network
 
         Args:
@@ -74,10 +76,10 @@ class Input():
         """
 
         self.label = label
-        self.input = self.process(raw_series,num_blocks)
+        self.input = self.process(raw_series,num_blocks, auto_corr)
 
 
-    def process(self,raw_series,num_blocks):
+    def process(self,raw_series,num_blocks, auto_corr):
         """ Function that does the entire processing of going from raw time series to a suitable input to feed to a recurrent neural network
 
         Args:
@@ -91,10 +93,10 @@ class Input():
 
 
         # stores the processed time series
-        res = np.array([])
+        res = np.array([], dtype=np.float64)
 
         ## returns a list of transformed time series (current list: normal. lowpass filtered, highpass filtered)
-        instances = self.transform(raw_series)
+        instances = self.transform(raw_series, auto_corr)
 
 
         for instance in instances:
@@ -105,7 +107,7 @@ class Input():
         return res
 
 
-    def transform(self,raw_series):
+    def transform(self,raw_series, auto_corr):
         """ Given a raw time series, outputs several transformations applied to it
             Transformations may be filtering, projecting, ...
 
@@ -115,8 +117,11 @@ class Input():
         Returns:
             List(numpy.ndarray): list of all transformations
         """
-
-        res = [raw_series, ]
+        res = [raw_series]
+        if auto_corr:
+            auto_corr=acf(raw_series[:,1], fft=True)
+            auto_corr=np.vstack((auto_corr, np.zeros(len(auto_corr)))).T
+            res.append(auto_corr)
 
         return res
 
@@ -134,7 +139,7 @@ class Input():
             numpy.ndarray: 1D array of length num_blocks*num_features_per_block containing all the features from a time series
         """
 
-        res = np.array([])
+        res = np.array([], dtype=np.float64)
         length = len(instance)
         # divide the length by num_blocks to get block_size
         block_size, remainder  = divmod(length,num_blocks)
@@ -162,7 +167,7 @@ class Input():
         Args:
             instance (numpy.ndarray): 1D array containing numerical values 
         """
-        res = np.array([])
+        res = np.array([],dtype=np.float64)
 
         # list of functions applied to the array for feature extraction
         functions = [np.mean,np.median,np.std,np.min,np.max,len,count_extremums,max_slope, min_slope]
@@ -179,9 +184,9 @@ class PolymerDataset(Dataset):
 
     ## These functions are necessary to define an iterator usable by Pytorch
 
-    def __init__(self, data_paths,num_blocks, lstm=False, seed=10):
+    def __init__(self, data_paths,num_blocks, lstm=False, seed=10, auto_corr=False):
         super().__init__()
-        self.process(data_paths,num_blocks,lstm,seed)
+        self.process(data_paths,num_blocks,lstm,seed, auto_corr)
 
     def __len__(self):
         return len(self.labels)
@@ -190,7 +195,7 @@ class PolymerDataset(Dataset):
         return self.data[idx], self.labels[idx]
 
 
-    def process(self,data_paths, num_blocks,lstm,seed):
+    def process(self,data_paths, num_blocks,lstm,seed, auto_corr):
         """ Processes the two datasets in the aim of not having bias catchable by the neural network:
         - filtering signals that are too long and too short
         - balancing the two datasets, resulting in the two classes each representing 50% of the data
@@ -252,13 +257,17 @@ class PolymerDataset(Dataset):
         ## using our Input class to build the entire dataset and extracting features from each row
         for index, raw_data in enumerate(raw_data):
             for raw_series in raw_data:
-                processed_series = Input(raw_series=raw_series,num_blocks=num_blocks,label=labels[index])
+                processed_series = Input(raw_series=raw_series,num_blocks=num_blocks,label=labels[index], auto_corr=auto_corr)
                 data.append(processed_series.input)
                 data_labels.append(labels[index])
         data = np.array(data)
 
         #normalizing features
-        data = (data - data.mean(axis=0)) / data.std(axis=0)
+        for i,row in enumerate(data):
+            if row.std():
+                data[i]=(row-row.mean())/row.std()
+            else:
+                data[i]=np.zeros(len(row))      
 
 
         data = torch.Tensor(data).float()
@@ -331,7 +340,7 @@ class LSTM(nn.Module):
                 optimizer.step()
                 preds = torch.argmax(probs, dim=1, keepdim=False)
                 num_correct += (preds == y).sum()
-            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==num_epochs -1 :
+            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==(num_epochs-1):
                 print(f'epoch={epoch}/{num_epochs - 1}, loss={loss}, accuracy={num_correct*100/len(dataset)}')
 
 
