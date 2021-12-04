@@ -1,1 +1,1 @@
-Best accuracy (0.9016766126740551) and f1 (0.8990959463400408) were reached with params {'num_blocks': 5, 'lr': 0.005, 'hidden_dim': 4, 'num_epochs': 10}
+Best accuracy (0.9310883773799374) and f1 (0.9306845791053309) were reached with params {'psd': False, 'auto_corr': False, 'num_blocks': 5, 'nn_specs': ([8, 8], [Tanh(), Tanh()]), 'hidden_dim': 8, 'lr': 0.001, 'rstm_layers': 1, 'num_epochs': 350} 
