@@ -40,15 +40,18 @@ def find_current_diffs(event):
     return np.array(current_diffs)
 
 def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=2):
+    if data.ndim > 1:
+        data = np.expand_dims(data, axis=0)
+
     k = len(data)
-    fig, axes = plt.subplots(k, 1, figsize=(30, 15), sharex=True, sharey=True)
+    fig, axes = plt.subplots(k, 1, figsize=(30, 30), sharex=True, sharey=True)
 
     for i in range(k):
         event = data[i]
         time = event[:, 0]
         current = event[:, 1]
-
-        g = sns.lineplot(x=time, y=current, ax=axes[i])
+        ax = axes[i] if isinstance(axes, np.ndarray) else axes
+        g = sns.lineplot(x=time, y=current, ax=ax)
         g.set_xlabel('Time [ms]')
         g.set_ylabel('Current')
 
@@ -58,39 +61,112 @@ def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=2):
             peak_currents = peaks[:, 1]
             low_times = lows[:, 0]
             low_currents = lows[:, 1]
-            sns.scatterplot(x=peak_times, y=peak_currents, ax=axes[i], s=100, color='blue')
-            sns.scatterplot(x=low_times, y=low_currents, ax=axes[i], s=100, color='red')
+            sns.scatterplot(x=peak_times, y=peak_currents, ax=ax, s=100, color='blue')
+            sns.scatterplot(x=low_times, y=low_currents, ax=ax, s=100, color='red')
         
         if plot_fft:
-            fft = np.fft.rfft(current)
-            # power_spectrum = np.abs(fft) ** 2
+            fft = np.fft.fft(event[:, 1])
             amplitudes = np.abs(fft)
-            print(np.max(amplitudes))
-            # axes[i].set_yscale('log')
-            g = sns.lineplot(x=np.linspace(0.01, len(amplitudes) * 0.01, len(amplitudes)), y=amplitudes, ax=axes[i], color='green')
+            fft_features = build_fft_features(event)
+            # power_spectrum = np.abs(fft) ** 2
+            ax.set_yscale('log')
+            ax.plot(time, amplitudes, color='grey')
+            # sns.lineplot(x=time, y=amplitudes, ax=ax, color='green')
+            ax.axvspan(fft_features['dwell_start'], fft_features['dwell_end'], color='yellow')
 
-def build_features(event, extrema_th=0):
+
+def build_fft_features(event, diff_th=10):
+    features = {
+        'max_amp': 0,
+        'min_amp': 0,
+        'mean_amp': 0,
+        'std_amp': 0,
+        'dwell_time': 0,
+        'dwell_start': 0,
+        'dwell_end': 0
+    }
+
+    if len(event) > 0:
+        fft = np.fft.fft(event[:, 1])
+        time = event[:, 0]
+        amplitudes = np.abs(fft)
+        dwells = []
+        dwell = []
+
+        for i in range(1, len(amplitudes)):
+            diff = amplitudes[i]-amplitudes[i-1]
+            if diff < diff_th:
+                dwell.append(time[i])
+            else:
+                dwells.append(dwell)
+                dwell = []
+        
+        features['max_amp'] = np.max(amplitudes)
+        features['min_amp'] = np.min(amplitudes)
+        features['mean_amp'] = np.mean(amplitudes)
+        features['std_amp'] = np.std(amplitudes)
+
+        if len(dwells) > 0:
+            longest_dwell = max(dwells, key=lambda d: len(d))
+            if len(longest_dwell) > 0:
+                features['dwell_time'] = longest_dwell[-1]-longest_dwell[0]
+                features['dwell_start'] = longest_dwell[0]
+                features['dwell_end'] = longest_dwell[-1]
+    
+    return features
+
+def build_peak_features(event):
+    peaks_idx = find_peaks_cwt(event[:, 1], widths=max([1, event[-1][0]]))
+    features = {
+        'num_peaks': len(peaks_idx),
+        'mean_peaks': 0,
+        'peak_1': 0, 
+        'peak_2': 0,
+        'peak_3': 0,
+        'peak_4': 0,
+        'peak_5': 0
+    }
+    if len(peaks_idx) > 0:
+        peaks = sorted(event[peaks_idx][:, 1], reverse=True)
+        features['mean_peaks'] = np.mean(peaks)
+        features['peak_1'] = peaks[0] if len(peaks) > 0 else 0
+        features['peak_2'] = peaks[1] if len(peaks) > 1 else 0
+        features['peak_3'] = peaks[2] if len(peaks) > 2 else 0
+        features['peak_4'] = peaks[3] if len(peaks) > 3 else 0
+        features['peak_5'] = peaks[4] if len(peaks) > 4 else 0
+    
+    return features
+
+
+def build_extrema_features(event, extrema_th=0):
+    features = {
+        'num_peaks': 0,
+        'num_lows': 0,
+        'mean_peaks': 0,
+        'std_peaks': 0,
+        'mean_lows': 0,
+        'std_lows': 0
+    }
+
+    if len(event) > 0:
+        peaks, lows = find_extrema(event, extrema_th=extrema_th)
+        features['num_peaks'] = len(peaks)
+        features['num_lows'] = len(lows)
+        features['mean_peaks'] = np.mean(peaks) if len(peaks) > 0 else 0
+        features['std_peaks'] = np.std(peaks) if len(peaks) > 0 else 0
+        features['mean_lows'] = np.mean(lows) if len(lows) > 0 else 0
+        features['std_lows'] = np.std(lows) if len(lows) > 0 else 0
+    
+    return features
+
+def build_basic_features(event):
     features = {
         'num_signals': 0, 
         'duration': 0,
         'max_current': 0, 
         'min_current': 0, 
         'mean_current': 0,
-        'std_current': 0,
-        'num_peaks': 0, 
-        'num_lows': 0,
-        'mean_peaks': 0,
-        'std_peaks': 0,
-        'mean_lows': 0,
-        'std_lows': 0,
-        'amplitude': 0,
-        # 'num_peaks': 0,
-        # 'mean_peaks': 0,
-        # 'peak_1': 0,
-        # 'peak_2': 0,
-        # 'peak_3': 0,
-        # 'peak_4': 0,
-        # 'peak_5': 0
+        'std_current': 0
     }
     if len(event) > 0:
         features['num_signals'] = len(event)
@@ -99,28 +175,52 @@ def build_features(event, extrema_th=0):
         features['min_current'] = np.min(event[:, 1])
         features['mean_current'] = np.mean(event[:, 1])
         features['std_current'] = np.std(event[:, 1])
-        peaks, lows = find_extrema(event, extrema_th=extrema_th)
-        features['num_peaks'] = len(peaks)
-        features['num_lows'] = len(lows)
-        features['mean_peaks'] = np.mean(peaks) if len(peaks) > 0 else 0
-        features['std_peaks'] = np.std(peaks) if len(peaks) > 0 else 0
-        features['mean_lows'] = np.mean(lows) if len(lows) > 0 else 0
-        features['std_lows'] = np.std(lows) if len(lows) > 0 else 0
-        # features['mean_extrema_diff'] = np.mean(np.abs([extrema[i, 1] - extrema[i-1, 1] for i in range(1, len(extrema))]))
-        fft = np.fft.rfft(event[:, 1])
-        amplitudes = np.abs(fft)
-        features['amplitude'] = np.max(amplitudes)
-        # peaks_idx = find_peaks_cwt(event[:, 1], widths=max([1, event[-1][0]]))
-        # features['num_peaks'] = len(peaks_idx)
-        # if len(peaks_idx) > 0:
-        #     peaks = sorted(event[peaks_idx][:, 1], reverse=True)
-        #     features['mean_peaks'] = np.mean(peaks)
-        #     features['peak_1'] = peaks[0] if len(peaks) > 0 else 0
-        #     features['peak_2'] = peaks[1] if len(peaks) > 1 else 0
-        #     features['peak_3'] = peaks[2] if len(peaks) > 2 else 0
-        #     features['peak_4'] = peaks[3] if len(peaks) > 3 else 0
-        #     features['peak_5'] = peaks[4] if len(peaks) > 4 else 0
+
     return features
+
+
+def build_features(event, extrema_th=0):
+    return {
+        **build_basic_features(event),
+        **build_extrema_features(event, extrema_th=extrema_th),
+        **build_fft_features(event)
+    }
+
+
+def balance_data(data):
+    balanced_data = []
+    min_data_size = min([len(d) for d in data])
+    for events in data:
+        indices = np.random.permutation(len(events))
+        balanced_data.append(events[indices[:min_data_size]])
+    return balanced_data
+
+
+def filter_data(data):
+    clean_data = []
+    for events in data:
+        # event_lens = [len(event) for event in b_data]
+        # min_event_len = np.quantile(event_lens, 0.1)
+        min_cutoff_len = 50
+        # max_event_len = np.quantile(event_lens, 0.9)
+        max_cutoff_len = 10000
+        clean_events = []
+        for event in events:
+            if len(event) > min_cutoff_len and len(event) < max_cutoff_len:
+                clean_events.append(event)
+        clean_data.append(clean_events)
+    return clean_data
+
+
+def standardize_data(data):
+    data = np.array(data)
+    data_mean = data.mean(axis=1, keepdims=True)
+    data_std = data.std(axis=1, keepdims=True)
+    data_std = np.where(np.isclose(data_std, 0), 1, data_std)
+    data = (data - data_mean) / data_std
+    data = np.where(np.isnan(data), 0, data)
+    return data
+
 
 class PolymerDataset(Dataset):
     def __init__(self, data_paths, timesteps=None, stepsize=None, extrema_th=0, save_path=None) -> None:
@@ -167,45 +267,24 @@ class PolymerDataset(Dataset):
         np.random.seed(seed)
 
         # Make data balanced
-        balanced_data = []
-        min_data_size = min([len(d) for d in self.raw_data])
-        for r_data in self.raw_data:
-            indices = np.random.permutation(len(r_data))
-            balanced_data.append(r_data[indices[:min_data_size]])
+        balanced_data = balance_data(self.raw_data)
 
         # Remove too short and too long events
-        normal_data = []
-        for b_data in balanced_data:
-            # event_lens = [len(event) for event in b_data]
-            # min_event_len = np.quantile(event_lens, 0.1)
-            min_cutoff_len = 50
-            # max_event_len = np.quantile(event_lens, 0.9)
-            max_cutoff_len = 10000
-            normal_events = []
-            for event in b_data:
-                if len(event) > min_cutoff_len and len(event) < max_cutoff_len:
-                    normal_events.append(event)
-            normal_data.append(normal_events)
+        clean_data = filter_data(balanced_data)
 
         # Calculate timesteps
-        max_event_len = np.max([len(event) for n_data in normal_data for event in n_data])
+        max_event_len = np.max([len(event) for events in clean_data for event in events])
         timesteps = timesteps or int(np.ceil(max_event_len / stepsize))
 
         # Preprocess events
-        for data_index, raw_data in enumerate(normal_data):
-            for event in tqdm(raw_data, desc=f'Processing {self.data_paths[data_index]}'):
+        for data_index, events in enumerate(clean_data):
+            for event in tqdm(events, desc=f'Processing {self.data_paths[data_index]}'):
                 processed_event = self._process_event(event, timesteps=timesteps, stepsize=stepsize, extrema_th=extrema_th)
-                event_std = np.std(processed_event, axis=0)
                 data.append(processed_event)
                 labels.append(data_index)
 
         # Standardize
-        data = np.array(data)
-        data_mean = data.mean(axis=1, keepdims=True)
-        data_std = data.std(axis=1, keepdims=True)
-        data_std = np.where(np.isclose(data_std, 0), 1, data_std)
-        data = (data - data_mean) / data_std
-        data = np.where(np.isnan(data), 0, data)
+        data = standardize_data(data)
 
         self.data = torch.tensor(data, dtype=torch.float)
         self.labels = torch.tensor(np.array(labels), dtype=torch.long)
