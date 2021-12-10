@@ -113,7 +113,7 @@ class Input():
             List(numpy.ndarray): list of all transformations
         """
 
-        res = [raw_series, ]
+        res = [raw_series]
 
         return res
 
@@ -173,9 +173,9 @@ class PolymerDataset(Dataset):
 
     ## These functions are necessary to define an iterator usable by Pytorch
 
-    def __init__(self, data_paths,num_blocks, lstm=False, seed=10):
+    def __init__(self, data_paths,num_blocks, nn = True, lstm=False, seed=10):
         super().__init__()
-        self.process(data_paths,num_blocks,lstm,seed)
+        self.process(data_paths,num_blocks,nn,lstm,seed)
 
     def __len__(self):
         return len(self.labels)
@@ -184,7 +184,7 @@ class PolymerDataset(Dataset):
         return self.data[idx], self.labels[idx]
 
 
-    def process(self,data_paths, num_blocks,lstm,seed):
+    def process(self,data_paths, num_blocks,nn,lstm,seed):
         """ Processes the two datasets in the aim of not having bias catchable by the neural network:
         - filtering signals that are too long and too short
         - balancing the two datasets, resulting in the two classes each representing 50% of the data
@@ -251,16 +251,18 @@ class PolymerDataset(Dataset):
 
         #normalizing features
         data = (data - data.mean(axis=0)) / data.std(axis=0)
-
-
-        data = torch.Tensor(data).float()
-
+        data_labels = np.array(data_labels)
+        
+        if nn:
+        
+            data = torch.Tensor(data).float()
+            data_labels = torch.Tensor(data_labels).long()
         ## if lstm is true, set up the data such that it can easily be fed into a lstm
-        if lstm:
-            data = data.view((data.shape[0],num_blocks,-1))
+            if lstm:
+                data = data.view((data.shape[0],num_blocks,-1))
 
         self.data = data
-        self.labels = torch.Tensor(np.array(data_labels)).long()
+        self.labels = data_labels
 
         return self
 
@@ -278,7 +280,8 @@ class LSTM(nn.Module):
         super(LSTM, self).__init__()
         self.lstm = nn.LSTM(input_size= input_dim, num_layers=num_layers, hidden_size=hidden_dim,batch_first=True)
         self.fc1 =nn.Linear(hidden_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim,2)
+        self.fc2 = nn.Linear(hidden_dim,hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim,2)
 
     
     def forward(self, input):
@@ -295,8 +298,9 @@ class LSTM(nn.Module):
         ## we only want last hidden states values
         lstm_out = lstm_out[:,-1,:]
         ## passing through MLP and softmax
-        lstm_out = self.fc1(F.relu(lstm_out.view(num_blocks,-1)))
-        lstm_out = self.fc2(F.relu(lstm_out))
+        lstm_out = self.fc1(F.leaky_relu(lstm_out.view(num_blocks,-1)))
+        lstm_out = self.fc2(F.leaky_relu(lstm_out))
+        lstm_out = self.fc3(F.leaky_relu(lstm_out))
 
         scores = F.log_softmax(lstm_out,dim=1)
 
