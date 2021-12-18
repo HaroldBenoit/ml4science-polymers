@@ -134,7 +134,7 @@ class AA0066_Pipeline(Pipeline):
         for func in current_functions:
             features = np.concatenate((features, func(event[:, 1])), axis=None)
 
-        for func in current_functions+row_functions:
+        for func in row_functions:
             features = np.concatenate((features, func(event)), axis=None)
 
         return features        
