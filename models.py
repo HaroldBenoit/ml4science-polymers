@@ -8,6 +8,8 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
 
 
 class VanillaLSTM(nn.Module):
@@ -85,3 +87,32 @@ def train(dataset, model, num_epochs=100, batch_size=512, weight_decay=0.001, lr
             print(f'epoch={epoch}/{num_epochs}, loss={np.mean(losses)}, accuracy={num_correct*100/len(dataset)}')
     
     return model
+
+
+def test(dataset,model,batch_size = 64):
+
+
+    data_loader = DataLoader(dataset, batch_size=64, shuffle=False)
+
+    predictions = np.array([])
+    labels = np.array([])
+
+    with torch.no_grad():
+        for X, y in iter(data_loader):
+            probs = model(X)
+            preds = torch.argmax(probs, dim=1, keepdim=False)
+            predictions = np.concatenate((predictions,preds), axis=None)
+            labels= np.concatenate((labels,y),axis=None)
+
+
+    accuracy = accuracy_score(labels,predictions)
+    f1 = f1_score(labels,predictions)
+    precision = precision_score(labels,predictions)
+    recall = recall_score(labels,predictions)
+
+    names =["Accuracy", "F1 Score", "Precision", "Recall"]
+    functions = [accuracy_score, f1_score, precision_score, recall_score]
+
+    for name, func in zip(names,functions):
+        score = func(labels,predictions)
+        print(f"{name}: {score*100:.2f}%")
