@@ -36,14 +36,14 @@ def filter_data(data, by_quantile=True, min_quantile=0.1, max_quantile=0.9, min_
     clean_data = []
     ## such that the max function below is well defined
     if num_blocks is None:
-        num_blocks=1
+        num_blocks = 1
 
-    min_len = max(num_blocks+1,min_len)
+    min_len = max(num_blocks + 1, min_len)
 
     for events in data:
         if by_quantile:
             event_lens = [len(event) for event in events]
-            min_len = max(num_blocks+1,np.quantile(event_lens, min_quantile))
+            min_len = max(num_blocks + 1, np.quantile(event_lens, min_quantile))
             max_len = np.quantile(event_lens, max_quantile)
         clean_events = []
         for event in events:
@@ -68,6 +68,12 @@ class Pipeline:
         self.data_paths = []
         self.num_blocks = num_blocks
         self.block_size = block_size
+
+    def info(self):
+        return {
+            'num_blocks': self.num_blocks,
+            'block_size': self.block_size
+        }
 
     def load(self, data_paths):
         self.data_paths = data_paths
@@ -104,26 +110,36 @@ class Pipeline:
 
     def process_event(self, event):
         processed_event = []
-        block_size, _ = divmod(len(event),self.num_blocks)
-        #block_size = self.block_size or int(np.ceil(len(event) / self.num_blocks))
-        block_size = self.block_size or block_size
+        block_size = self.block_size or int(np.ceil(len(event) / self.num_blocks))
 
         for i in range(self.num_blocks):
             sub_event = event[i*block_size:(i+1)*block_size]
             features = self.extract_features(sub_event)
             processed_event.append(features)
+
         return np.array(processed_event)
 
 
 class AABB245_Pipeline(Pipeline):
-    def __init__(self, num_blocks=None, block_size=None, extrema_th=0, min_event_len=50, max_event_len=10000) -> None:
+    def __init__(self, num_blocks=None, block_size=None, extrema_th=0, min_event_len=50, max_event_len=10000, by_quantile=False) -> None:
         super().__init__(num_blocks=num_blocks, block_size=block_size)
         self.extrema_th = extrema_th
         self.min_event_len = min_event_len
         self.max_event_len = max_event_len
+        self.by_quantile = by_quantile
+
+    def info(self):
+        parent_info = super().info()
+        return {
+            'extrema_th': self.extrema_th,
+            'min_event_len': self.min_event_len,
+            'max_event_len': self.max_event_len,
+            'by_quantile': self.by_quantile,
+            **parent_info
+        }
 
     def filter(self, data):
-        return filter_data(data, by_quantile=False, min_len=self.min_event_len, max_len=self.max_event_len)
+        return filter_data(data, by_quantile=self.by_quantile, min_len=self.min_event_len, max_len=self.max_event_len)
 
     def extract_features(self, event):
         basic_features = extract_basic_features(event)
@@ -158,10 +174,18 @@ class PolymerDataset(Dataset):
     def __init__(self, data_paths, pipeline, seed=42, save_path=None):
         super().__init__()
         self.data_paths = data_paths
+        self.pipeline = pipeline
         self.process(data_paths, pipeline, seed)
         if save_path:
-                torch.save(self.data, save_path)
+            torch.save(self.data, save_path)
 
+    def info(self):
+        return {
+            'num_features': self.num_features,
+            'num_classes': self.num_classes,
+            'data': self.data_paths,
+            **self.pipeline.info()
+        }
 
     def __len__(self):
         return len(self.labels)
