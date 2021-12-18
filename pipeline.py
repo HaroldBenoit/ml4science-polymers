@@ -5,6 +5,7 @@ from numpy.core.shape_base import block
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch
+from torch.serialization import save
 from torch.utils import data
 
 from torch.utils.data import Dataset
@@ -144,12 +145,15 @@ class AA0066_Pipeline(Pipeline):
 
 
 class PolymerDataset(Dataset):
-    def __init__(self, data_paths, pipeline, seed=42, save_path=None):
+    def __init__(self, data_paths, pipeline, seed=42, save_path=None, nn=True, lstm=False):
         super().__init__()
         self.data_paths = data_paths
-        self.process(data_paths, pipeline, seed)
+        self.process(data_paths, pipeline, seed,nn=nn,lstm=lstm)
         if save_path:
-            torch.save(self.data, save_path)
+            if nn:
+                torch.save(self.data, save_path)
+            else:
+                np.save(arr=self.data,file=save_path)
 
     def __len__(self):
         return len(self.labels)
@@ -169,7 +173,7 @@ class PolymerDataset(Dataset):
     def num_blocks(self):
         return self.data.shape[1]
 
-    def process(self, data_paths, pipeline, seed=42):    
+    def process(self, data_paths, pipeline,seed,nn,lstm):    
         np.random.seed(seed)  
 
         # Load data 
@@ -185,7 +189,16 @@ class PolymerDataset(Dataset):
         # Standardize
         data = pipeline.standardize(data)
 
-        self.data = torch.tensor(data, dtype=torch.float)
-        self.labels = torch.tensor(np.array(labels), dtype=torch.long)
+        self.data = data
+        self.labels = labels
+
+        if nn:
+            self.data = torch.tensor(data, dtype=torch.float)
+            self.labels = torch.tensor(np.array(labels), dtype=torch.long)
+        ## if lstm is true, set up the data such that it can easily be fed into a lstm
+            if lstm:
+                data = data.view((data.shape[0],pipeline.num_blocks,-1))
+
+        
 
         return self
