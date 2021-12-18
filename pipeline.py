@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import pickle
 from numpy.core.shape_base import block
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,12 +32,18 @@ def balance_data(data):
     return balanced_data
 
 
-def filter_data(data, by_quantile=True, min_quantile=0.1, max_quantile=0.9, min_len=50, max_len=10000):
+def filter_data(data, by_quantile=True, min_quantile=0.1, max_quantile=0.9, min_len=50, max_len=10000, num_blocks=None):
     clean_data = []
+    ## such that the max function below is well defined
+    if num_blocks is None:
+        num_blocks=1
+
+    min_len = max(num_blocks+1,min_len)
+
     for events in data:
         if by_quantile:
             event_lens = [len(event) for event in events]
-            min_len = np.quantile(event_lens, min_quantile)
+            min_len = max(num_blocks+1,np.quantile(event_lens, min_quantile))
             max_len = np.quantile(event_lens, max_quantile)
         clean_events = []
         for event in events:
@@ -97,7 +104,10 @@ class Pipeline:
 
     def process_event(self, event):
         processed_event = []
-        block_size = self.block_size or int(np.ceil(len(event) / self.num_blocks))
+        block_size, _ = divmod(len(event),self.num_blocks)
+        #block_size = self.block_size or int(np.ceil(len(event) / self.num_blocks))
+        block_size = self.block_size or block_size
+
         for i in range(self.num_blocks):
             sub_event = event[i*block_size:(i+1)*block_size]
             features = self.extract_features(sub_event)
@@ -141,19 +151,17 @@ class AA0066_Pipeline(Pipeline):
         return features        
 
     def filter(self, data):
-        return filter_data(data, by_quantile=True)
+        return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
 
 
 class PolymerDataset(Dataset):
-    def __init__(self, data_paths, pipeline, seed=42, save_path=None, nn=True, lstm=False):
+    def __init__(self, data_paths, pipeline, seed=42, save_path=None):
         super().__init__()
         self.data_paths = data_paths
-        self.process(data_paths, pipeline, seed,nn=nn,lstm=lstm)
+        self.process(data_paths, pipeline, seed)
         if save_path:
-            if nn:
                 torch.save(self.data, save_path)
-            else:
-                np.save(arr=self.data,file=save_path)
+
 
     def __len__(self):
         return len(self.labels)
@@ -173,7 +181,7 @@ class PolymerDataset(Dataset):
     def num_blocks(self):
         return self.data.shape[1]
 
-    def process(self, data_paths, pipeline,seed,nn,lstm):    
+    def process(self, data_paths, pipeline,seed):    
         np.random.seed(seed)  
 
         # Load data 
@@ -192,13 +200,8 @@ class PolymerDataset(Dataset):
         self.data = data
         self.labels = labels
 
-        if nn:
-            self.data = torch.tensor(data, dtype=torch.float)
-            self.labels = torch.tensor(np.array(labels), dtype=torch.long)
-        ## if lstm is true, set up the data such that it can easily be fed into a lstm
-            if lstm:
-                data = data.view((data.shape[0],pipeline.num_blocks,-1))
-
         
+        self.data = torch.tensor(data, dtype=torch.float)
+        self.labels = torch.tensor(np.array(labels), dtype=torch.long)
 
         return self
