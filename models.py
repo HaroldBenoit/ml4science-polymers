@@ -121,11 +121,11 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
         if verbose > 1 or (verbose > 0 and (epoch % 50 == 0 or epoch == num_epochs-1)):
             print(f'epoch={epoch}/{num_epochs}, loss={np.mean(losses)}, accuracy={accuracy}')
 
-    test_metrics = {}
-
-    if test_dataset is not None:
-        test_metrics = test(test_dataset, model)
-        wandb.log({f"test_{name.lower()}": metric for name, metric in test_metrics.items()})
+        test_metrics = {}
+    
+        if test_dataset is not None:
+            test_metrics = test(test_dataset, model)
+            wandb.log({f"test_{name.lower()}": metric for name, metric in test_metrics.items()})
 
     wandb.finish(quiet=True)
 
