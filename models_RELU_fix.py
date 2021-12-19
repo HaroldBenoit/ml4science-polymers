@@ -22,7 +22,8 @@ class VanillaLSTM(nn.Module):
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, output_dim)
 
-
+        self.af1 = nn.LeakyReLU()
+        self.af2 = nn.LeakyReLU()
         
     def info(self):
         return {
@@ -36,8 +37,8 @@ class VanillaLSTM(nn.Module):
         outputs, _ = self.lstm(X)
         outputs = outputs[:, -1, :]
 
-        outputs = self.linear1(F.relu(outputs))
-        outputs = self.linear2(F.relu(outputs))
+        outputs = self.linear1(self.af1(outputs))
+        outputs = self.linear2(self.af2(outputs))
 
         probs = F.log_softmax(outputs, dim=1)
 
