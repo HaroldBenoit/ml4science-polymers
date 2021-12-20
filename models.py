@@ -22,6 +22,10 @@ class VanillaLSTM(nn.Module):
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, output_dim)
 
+        self.af1 = nn.LeakyReLU()
+        self.af2 = nn.LeakyReLU()
+
+
     def info(self):
         return {
             'model_name': 'VanillaLSTM',
@@ -34,8 +38,8 @@ class VanillaLSTM(nn.Module):
         outputs, _ = self.lstm(X)
         outputs = outputs[:, -1, :]
 
-        outputs = self.linear1(F.relu(outputs))
-        outputs = self.linear2(F.relu(outputs))
+        outputs = self.linear1(self.af1(outputs))
+        outputs = self.linear2(self.af2(outputs))
 
         probs = F.log_softmax(outputs, dim=1)
 
@@ -94,7 +98,7 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
         train_size=len(train_dataset),
         test_size=len(test_dataset) if test_dataset is not None else None
     )
-    wandb.init(project="ml4science-polymers", config=config)
+    wandb.init(project="ml4science-polymers", config=config, entity="lucastrg")
 
     data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     loss_function = torch.nn.NLLLoss()
