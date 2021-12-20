@@ -14,6 +14,42 @@ from pipeline import AABB245_Pipeline, PolymerDataset, train_test_split
 Parameter = namedtuple('Parameter', ['name', 'value'])
 
 
+class LeakyReluLSTM(nn.Module):
+
+    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
+        self.linear1 = nn.Linear(hidden_dim, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, output_dim)
+
+        self.af1 = nn.LeakyReLU()
+        self.af2 = nn.LeakyReLU()
+        
+    def info(self):
+        return {
+            'model_name': ' LeakyReluLSTM',
+            'lstm_input_dim': self.lstm.input_size,
+            'lstm_hidden_dim': self.lstm.hidden_size,
+            'lstm_num_layers': self.lstm.num_layers
+        }
+    
+    def forward(self, X):
+        outputs, _ = self.lstm(X)
+        outputs = outputs[:, -1, :]
+
+        outputs = self.linear1(self.af1(outputs))
+        outputs = self.linear2(self.af2(outputs))
+
+        probs = F.log_softmax(outputs, dim=1)
+
+        return probs
+
+    def predict(self, X):
+        probs = self.forward(X)
+        preds = torch.argmax(probs, dim=1, keepdim=False)
+        return preds
+
+
 class VanillaLSTM(nn.Module):
 
     def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64):
