@@ -2,17 +2,17 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from torch.nn.modules.linear import Linear
 
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 
-from statsmodels.tsa.stattools import acf
+
 
 
 plt.style.use('ggplot')
 plt.rcParams['figure.figsize'] = (15,7)
 
+from statsmodels.tsa.stattools import acf
 
 
 ## torch
@@ -28,8 +28,6 @@ torch.manual_seed(1)
 
 
 REBUILD_DATA = True
-
-
 
 def count_extremums(row):
     current=row[:,1]
@@ -67,35 +65,6 @@ def min_slope(row):
 
     return minslope
     
-
-def manual_features(row):
-    minslope=1000
-    maxslope=-1000
-
-    increasing = row[0,1]<row[1,1]
-    past_value=row[0,1]
-    extremum_counter = 0
-    mean_acc =0
-
-    for i in range(len(row)-1):
-        mean_acc+=row[i,1]
-        if (row[i+1,0]-row[i,0])!=0 and (row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])<minslope:
-            minslope=(row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])
-
-        elif (row[i+1,0]-row[i,0])!=0 and (row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])>maxslope:
-            maxslope=(row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])
-
-        if increasing and i<past_value:
-            increasing = False
-            extremum_counter +=1
-        elif not increasing and i>past_value:
-            increasing=True
-            extremum_counter+=1
-
-        past_value=i
-
-    return mean_acc/len(row),minslope,max_slope,extremum_counter
-
 def PSD(row):
     current=row[:,1]
     n = len(current)
@@ -105,9 +74,8 @@ def PSD(row):
     return PSD
 
 class Input():
-    def __init__(self, raw_series,num_blocks,label, auto_corr, psd):
+    def __init__(self, raw_series,num_blocks,label):
         """ Initilaizes an input object from a raw time series i.e. an input suitable to feed to a recurrent neural network
-
         Args:
             raw_series (numpy array of shape (num_timesteps,2)): raw time series from npy data i.e. arr[0] where arr = np.load("data.npy")
             num_blocks ([type]): number of "feature blocks" into which the time series will be sliced i.e the number of of times we need to feed 
@@ -116,27 +84,25 @@ class Input():
         """
 
         self.label = label
-        self.input = self.process(raw_series,num_blocks, auto_corr, psd)
+        self.input = self.process(raw_series,num_blocks)
 
 
-    def process(self,raw_series,num_blocks, auto_corr, psd):
+    def process(self,raw_series,num_blocks):
         """ Function that does the entire processing of going from raw time series to a suitable input to feed to a recurrent neural network
-
         Args:
             raw_series (numpy array of shape (num_timesteps,2)): raw time series from npy data i.e. arr[0] where arr = np.load("data.npy")
             num_blocks ([type]): number of "feature blocks" into which the time series will be sliced i.e the number of of times we need to feed 
             to the LSTM to train on the entire time series
-
         Returns:
             np.ndarray: array of features from a single raw time series instance
         """
 
 
         # stores the processed time series
-        res = np.array([], dtype=np.float64)
+        res = np.array([])
 
         ## returns a list of transformed time series (current list: normal. lowpass filtered, highpass filtered)
-        instances = self.transform(raw_series, auto_corr, psd)
+        instances = self.transform(raw_series)
 
 
         for instance in instances:
@@ -147,43 +113,33 @@ class Input():
         return res
 
 
-    def transform(self,raw_series, auto_corr, psd):
+    def transform(self,raw_series):
         """ Given a raw time series, outputs several transformations applied to it
             Transformations may be filtering, projecting, ...
-
         Args:
             raw_series numpy.ndarray : 1 dimensional array representing the current values
-
         Returns:
             List(numpy.ndarray): list of all transformations
         """
-        res = [raw_series]
-        if auto_corr:
-            auto_corr=acf(raw_series[:,1], fft=True)
-            auto_corr=np.vstack((auto_corr, np.zeros(len(auto_corr)))).T
-            res.append(auto_corr)
-        
-        if psd:
-            psd = PSD(raw_series)
-            res.append(np.vstack((psd, np.zeros(len(psd)))).T)
+        res = [raw_series, PSD]
+        auto_corr=acf(raw_series[:,1], fft=True)
+        auto_corr=np.vstack((auto_corr, np.arange(len(auto_corr)))).T
+        res.append(auto_corr)
 
         return res
 
     def extract_features(self,instance, num_blocks):
 
         """ From a time series, divides it into num_blocks blocks and from each block, extract numerical features usable for a neural network
-
         Args:
             instance (numpy.ndarray): 1D array containing numerical values
             num_blocks (int): number of "feature blocks" into which the time series will be sliced i.e the number of of times we need to feed 
             to the LSTM to train on the entire time series
-
-
         Returns:
             numpy.ndarray: 1D array of length num_blocks*num_features_per_block containing all the features from a time series
         """
 
-        res = np.array([], dtype=np.float64)
+        res = np.array([])
         length = len(instance)
         # divide the length by num_blocks to get block_size
         block_size, remainder  = divmod(length,num_blocks)
@@ -211,7 +167,7 @@ class Input():
         Args:
             instance (numpy.ndarray): 1D array containing numerical values 
         """
-        res = np.array([],dtype=np.float64)
+        res = np.array([])
 
         # list of functions applied to the array for feature extraction
         functions = [np.mean,np.median,np.std,np.min,np.max,len,count_extremums,max_slope, min_slope]
@@ -228,9 +184,9 @@ class PolymerDataset(Dataset):
 
     ## These functions are necessary to define an iterator usable by Pytorch
 
-    def __init__(self, data_paths,num_blocks, lstm=False, seed=10, auto_corr=False, psd=False):
+    def __init__(self, data_paths,num_blocks, nn = True, lstm=False, seed=10):
         super().__init__()
-        self.process(data_paths,num_blocks,lstm,seed, auto_corr, psd)
+        self.process(data_paths,num_blocks,nn,lstm,seed)
 
     def __len__(self):
         return len(self.labels)
@@ -239,19 +195,17 @@ class PolymerDataset(Dataset):
         return self.data[idx], self.labels[idx]
 
 
-    def process(self,data_paths, num_blocks,lstm,seed, auto_corr, psd):
+    def process(self,data_paths, num_blocks,nn,lstm,seed):
         """ Processes the two datasets in the aim of not having bias catchable by the neural network:
         - filtering signals that are too long and too short
         - balancing the two datasets, resulting in the two classes each representing 50% of the data
         - Process each of the raw time series current into suitable inputs
         - Output a dataset where each row represents a suitable input for a NN derived from the raw time series
-
         Args:
             data_paths (list[string]): Should be a list of length 2 containing the paths of the data to be loaded 
             num_blocks (int): number of "feature blocks" into which a raw time series will be sliced i.e the number of of times we need to feed the
             to the LSTM to train on the entire time series
             seed (int): for setting the seed
-
         """
         
         raw_data = [np.load(data_path, allow_pickle=True) for data_path in data_paths]
@@ -301,27 +255,25 @@ class PolymerDataset(Dataset):
         ## using our Input class to build the entire dataset and extracting features from each row
         for index, raw_data in enumerate(raw_data):
             for raw_series in raw_data:
-                processed_series = Input(raw_series=raw_series,num_blocks=num_blocks,label=labels[index], auto_corr=auto_corr, psd=psd)
+                processed_series = Input(raw_series=raw_series,num_blocks=num_blocks,label=labels[index])
                 data.append(processed_series.input)
                 data_labels.append(labels[index])
         data = np.array(data)
 
         #normalizing features
-        for i,row in enumerate(data):
-            if row.std():
-                data[i]=(row-row.mean())/row.std()
-            else:
-                data[i]=np.zeros(len(row))      
-
-
-        data = torch.Tensor(data).float()
-
+        data = (data - data.mean(axis=0)) / data.std(axis=0)
+        data_labels = np.array(data_labels)
+        
+        if nn:
+        
+            data = torch.Tensor(data).float()
+            data_labels = torch.Tensor(data_labels).long()
         ## if lstm is true, set up the data such that it can easily be fed into a lstm
-        if lstm:
-            data = data.view((data.shape[0],num_blocks,-1))
+            if lstm:
+                data = data.view((data.shape[0],num_blocks,-1))
 
         self.data = data
-        self.labels = torch.Tensor(np.array(data_labels)).long()
+        self.labels = data_labels
 
         return self
 
@@ -329,33 +281,27 @@ class PolymerDataset(Dataset):
 
 class LSTM(nn.Module):
 
-    def __init__(self, input_dim, rstm_layers, hidden_dim, nn_specs, num_blocks):
+    def __init__(self, input_dim, num_layers, hidden_dim):
         """ creates a lstm neural network
-
         Args:
             input_dim (int)): Defines the dimension of the input x, should be equal to the number of features extracted per block
             num_layers(int): Defines the number of LSTM layers, should be equal to num_blocks
             hidden_dim (int): defines the number of features in the hidden states
         """
         super(LSTM, self).__init__()
-        self.lstm = nn.LSTM(input_size= input_dim, dropout=0.2, num_layers=rstm_layers, hidden_size=hidden_dim,batch_first=True)
+        self.lstm = nn.LSTM(input_size= input_dim, num_layers=num_layers, hidden_size=hidden_dim,batch_first=True)
+        self.fc1 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim,hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim,2)
 
-        old_dim=hidden_dim*num_blocks
+        self.af1 = nn.LeakyReLU()
+        self.af2 = nn.LeakyReLU()
+        self.af3 = nn.LeakyReLU()
 
-        #self.NN=nn.ModuleList()
 
-        NN_tmp=[nn.Flatten(),nn.Dropout(0.5)]
-        for dims, af in list(map(list, zip(*nn_specs))):
-            NN_tmp.append(af)
-            NN_tmp.append(nn.Linear(old_dim, dims))
-            #self.NN.append(af)
-            #self.NN.append(nn.Linear(old_dim, dims))
-            old_dim=dims
-        self.NN=nn.Sequential(*NN_tmp)
-
+    
     def forward(self, input):
         """ Forward pass of our network
-
         Args:
             input ([type]): should be our current time series preprocessed with shape(num_blocks, num_features) 
             where num_blocks is the number of blocks in which we have divided our time series and  num_features is the number of feature per block
@@ -365,28 +311,28 @@ class LSTM(nn.Module):
         ## the LSTM output are the hidden states values for all hidden states while processing the sequence
         lstm_out, _ = self.lstm(input)
 
-        
+        ## we only want last hidden states values
+        lstm_out = lstm_out[:,-1,:]
+        ## passing through MLP and softmax
+        lstm_out = self.fc1(self.af1(lstm_out.view(num_blocks,-1)))
+        lstm_out = self.fc2(self.af2(lstm_out))
+        lstm_out = self.fc3(self.af2(lstm_out))
 
-        #out = lstm_out[:,-1,:].view(num_blocks,-1)
-        out=lstm_out
-        #for module in self.NN:
-        #    out = module(out)
-        out=self.NN.forward(out)
-        scores = F.log_softmax(out,dim=1)
+        scores = F.log_softmax(lstm_out,dim=1)
 
         return scores
 
     def predict(self, test_data):
-        probs = self.forward(test_data)
+        probs = self.forward(X)
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
 
-    def train(dataset, num_features, rstm_layers, hidden_dim, num_epochs, batch_size, nn_specs,num_blocks,lr=0.001, verbose="v", ):
+    def train(dataset, num_features, num_blocks, hidden_dim, num_epochs, batch_size, lr=0.001, weight_decay = 0.001, verbose="v"):
 
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        model = LSTM(input_dim = num_features,rstm_layers= rstm_layers ,hidden_dim = hidden_dim, nn_specs=nn_specs, num_blocks=num_blocks)
-        loss_function = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        model = LSTM(input_dim = num_features, num_layers= 1 ,hidden_dim = hidden_dim)
+        loss_function = torch.nn.NLLLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
         for epoch in range(num_epochs):
             num_correct = 0
@@ -398,13 +344,8 @@ class LSTM(nn.Module):
                 optimizer.step()
                 preds = torch.argmax(probs, dim=1, keepdim=False)
                 num_correct += (preds == y).sum()
-            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==(num_epochs-1):
+            if "vv" in verbose or ("v" in verbose and epoch%50==0) or epoch==num_epochs -1 :
                 print(f'epoch={epoch}/{num_epochs - 1}, loss={loss}, accuracy={num_correct*100/len(dataset)}')
 
 
         return model
-
-class Transformer(nn.Module):
-    def __init__(self, input_dim, rstm_layers, hidden_dim, nn_specs, num_blocks):
-        super(Transformer, self).__init__()
-        self.transformer = nn.Transformer()
