@@ -118,7 +118,7 @@ class MultiOutputLSTM(nn.Module):
         return preds
 
 
-def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=512, weight_decay=0.001, lr_rate=0.001, verbose=2):
+def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=512, weight_decay=0.001, lr_rate=0.001, verbose=2,log=True):
     full_dataset = train_dataset.dataset if isinstance(train_dataset, Subset) else train_dataset
     config = dict(
         **full_dataset.info(),
@@ -132,7 +132,9 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
         train_size=len(train_dataset),
         test_size=len(test_dataset) if test_dataset is not None else None
     )
-    wandb.init(project="ml4science-polymers", config=config, entity="lucastrg")
+
+    if log:
+        wandb.init(project="ml4science-polymers", config=config, entity="lucastrg")
 
     data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     loss_function = torch.nn.NLLLoss()
@@ -154,18 +156,25 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
 
         avg_loss = np.mean(losses)
         accuracy = num_correct*100/len(train_dataset)
-        wandb.log({'train_loss': avg_loss, 'train_accuracy': accuracy})
+        if log:
+            wandb.log({'train_loss': avg_loss, 'train_accuracy': accuracy})
 
         if verbose > 1 or (verbose > 0 and (epoch % 50 == 0 or epoch == num_epochs-1)):
-            print(f'epoch={epoch}/{num_epochs}, loss={np.mean(losses)}, accuracy={accuracy}')
+            print(f'epoch={epoch}/{num_epochs}, loss={np.mean(losses):.6f}, accuracy={accuracy:.4f}')
 
         test_metrics = {}
     
         if test_dataset is not None:
             test_metrics = test(test_dataset, model)
-            wandb.log({f"test_{name.lower()}": metric for name, metric in test_metrics.items()})
 
-    wandb.finish(quiet=True)
+            if verbose > 1 or (verbose > 0 and (epoch % 50 == 0 or epoch == num_epochs-1)):
+                print(f"epoch={epoch}/{num_epochs}, test_accuracy={test_metrics['accuracy']*100:.4f}")
+
+            if log:
+                wandb.log({f"test_{name.lower()}": metric for name, metric in test_metrics.items()})
+
+    if log:
+        wandb.finish(quiet=True)
 
     return model, test_metrics
 
