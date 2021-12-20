@@ -168,7 +168,28 @@ class AA0066_Pipeline(Pipeline):
 
     def filter(self, data):
         return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
+class PairSingle_Pipeline(Pipeline):
+    def __init__(self, num_blocks):
+        super().__init__(num_blocks=num_blocks)
 
+    def extract_features(self, event):
+        features = np.array([])
+
+        current_functions = [np.mean, np.median, np.std, np.min, np.max, len]
+        row_functions = [count_extremums, max_slope, min_slope, timestamp]
+
+        for func in current_functions:
+            features = np.concatenate((features, func(event[:, 1])), axis=None)
+
+        for func in row_functions:
+            features = np.concatenate((features, func(event)), axis=None)
+        
+        features=np.concatenate((features, extract_fft_features(event)), axis=None)
+
+        return features        
+
+    def filter(self, data):
+        return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
 
 class PolymerDataset(Dataset):
     def __init__(self, data_paths, pipeline, seed=42, save_path=None):

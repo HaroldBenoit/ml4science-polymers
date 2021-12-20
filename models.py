@@ -48,6 +48,40 @@ class VanillaLSTM(nn.Module):
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
 
+class AugmentedLSTM(nn.Module):
+
+    def __init__(self, input_dim, output_dim=2, num_layers=2, hidden_dim=64):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
+        self.linear1 = nn.Linear(hidden_dim, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, output_dim)
+
+
+        
+    def info(self):
+        return {
+            'model_name': 'AugmentedLSTM',
+            'lstm_input_dim': self.lstm.input_size,
+            'lstm_hidden_dim': self.lstm.hidden_size,
+            'lstm_num_layers': self.lstm.num_layers
+        }
+    
+    def forward(self, X):
+        outputs, _ = self.lstm(X)
+        outputs = outputs[:, -1, :]
+
+        outputs = self.linear1(F.relu(outputs))
+        outputs = self.linear2(F.relu(outputs))
+
+        probs = F.log_softmax(outputs, dim=1)
+
+        return probs
+
+    def predict(self, X):
+        probs = self.forward(X)
+        preds = torch.argmax(probs, dim=1, keepdim=False)
+        return preds
+
 
 class MultiOutputLSTM(nn.Module):
 

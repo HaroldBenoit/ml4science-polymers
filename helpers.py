@@ -39,6 +39,8 @@ def count_extremums(row):
         tmp=i
     return counter
 
+def timestamp(row):
+    return row[1:0],row[-1:0], row[1:0]-row[-1:0]
 
 def max_slope(row):
     maxslope=-1000
