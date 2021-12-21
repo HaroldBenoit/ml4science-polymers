@@ -13,8 +13,6 @@ def split_in_k(y,row,k, seed=1):
     
     for i in range(k):
         index=indices[i * chunk_size: (i + 1) * chunk_size]
-
-
         yield (y,row[index])
 
 
@@ -132,9 +130,7 @@ def extract_fft_features(event, diff_th=10):
         'min_amp': 0,
         'mean_amp': 0,
         'std_amp': 0,
-        'dwell_time': 0,
-        'dwell_start': 0,
-        'dwell_end': 0
+        'fft_dwell_time': 0
     }
 
     if len(event) > 0:
@@ -160,9 +156,7 @@ def extract_fft_features(event, diff_th=10):
         if len(dwells) > 0:
             longest_dwell = max(dwells, key=lambda d: len(d))
             if len(longest_dwell) > 0:
-                features['dwell_time'] = longest_dwell[-1]-longest_dwell[0]
-                features['dwell_start'] = longest_dwell[0]
-                features['dwell_end'] = longest_dwell[-1]
+                features['fft_dwell_time'] = longest_dwell[-1] - longest_dwell[0]
     
     return np.array(list(features.values()))
 
@@ -212,20 +206,22 @@ def extract_extrema_features(event, extrema_th=0):
 
 def extract_basic_features(event):
     features = {
-        'num_signals': 0, 
-        'duration': 0,
+        'event_len': 0, 
+        'dwell_time': 0,
         'max_current': 0, 
         'min_current': 0, 
         'mean_current': 0,
-        'std_current': 0
+        'std_current': 0,
+        'median_current': 0
     }
     if len(event) > 0:
-        features['num_signals'] = len(event)
-        features['duration'] = event[-1][0]
+        features['event_len'] = len(event)
+        features['dwell_time'] = event[-1][0]-event[0][0]
         features['max_current'] = np.max(event[:, 1])
         features['min_current'] = np.min(event[:, 1])
         features['mean_current'] = np.mean(event[:, 1])
         features['std_current'] = np.std(event[:, 1])
+        features['median_current'] = np.median(event[:, 1])
 
     return np.array(list(features.values()))
 
