@@ -5,13 +5,11 @@ from collections import namedtuple, defaultdict
 from itertools import product
 from functools import partial
 import torch
-from torch.utils.data import DataLoader, Subset, Dataset, dataset
+from torch.utils.data import DataLoader, Subset, Dataset
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 import wandb
-
-from pipeline import AABB245_Pipeline, PolymerDataset, train_test_split
 
 
 Parameter = namedtuple('Parameter', ['name', 'value'])
