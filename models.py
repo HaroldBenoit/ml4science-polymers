@@ -1,8 +1,11 @@
+from typing import Callable
+import inspect
 import numpy as np
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from itertools import product
+from functools import partial
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, Dataset, dataset
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
@@ -16,7 +19,7 @@ Parameter = namedtuple('Parameter', ['name', 'value'])
 
 class LeakyReluLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64):
+    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64, *args, **kwargs):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
@@ -52,7 +55,7 @@ class LeakyReluLSTM(nn.Module):
 
 class VanillaLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64):
+    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64, *args, **kwargs):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
@@ -86,7 +89,7 @@ class VanillaLSTM(nn.Module):
 
 class AugmentedLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=2, hidden_dim=64):
+    def __init__(self, input_dim, output_dim=2, num_layers=2, hidden_dim=64, *args, **kwargs):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
@@ -121,7 +124,7 @@ class AugmentedLSTM(nn.Module):
 
 class MultiOutputLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, num_blocks=100, hidden_dim=64) -> None:
+    def __init__(self, input_dim, output_dim=2, num_layers=1, num_blocks=100, hidden_dim=64, *args, **kwargs) -> None:
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=1, batch_first=True)
         self.linear1 = nn.Linear(num_blocks, hidden_dim)
@@ -152,7 +155,7 @@ class MultiOutputLSTM(nn.Module):
         return preds
 
 
-def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=512, weight_decay=0.001, lr_rate=0.001, verbose=2,log=True):
+def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=512, weight_decay=0.001, lr_rate=0.001, verbose=2, log=True, *args, **kwargs):
     full_dataset = train_dataset.dataset if isinstance(train_dataset, Subset) else train_dataset
     config = dict(
         **full_dataset.info(),
@@ -168,7 +171,7 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
     )
 
     if log:
-        wandb.init(project="ml4science-polymers", config=config, entity="lucastrg")
+        wandb.init(project="ml4science-polymers", config=config)
 
     data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     loss_function = torch.nn.NLLLoss()
@@ -213,7 +216,7 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
     return model, test_metrics
 
 
-def test(dataset, model, batch_size=4096):
+def test(dataset, model, batch_size=4096, *args, **kwargs):
     full_dataset = dataset.dataset if isinstance(dataset, Subset) else dataset
     multiclass = full_dataset.num_classes > 2
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -237,7 +240,35 @@ def test(dataset, model, batch_size=4096):
     return metrics
 
 
-def run_245(param_grid):
+def kfold_cv_iter(dataset, k=5, seed=1):
+    num_samples = len(dataset)
+    fold_size = int(num_samples / k)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_samples)
+    
+    for i in range(k):
+        test_indices = indices[i * fold_size: (i + 1) * fold_size]
+        train_indices = list(set(range(num_samples)) - set(test_indices))
+        yield Subset(dataset, train_indices), Subset(dataset, test_indices)
+
+
+def cross_validate(dataset, model, train_fn, test_fn, k_fold=5, seed=42):
+    cv_metrics = defaultdict(int)
+
+    for train_dataset, test_dataset in kfold_cv_iter(dataset, k=k_fold, seed=seed):
+        _ = train_fn(train_dataset, model=model)
+        metrics = test_fn(test_dataset, model=model)
+        for metric_key, metric_value in metrics.items():
+            cv_metrics[metric_key] += metric_value
+
+    return {metric_key: metric_value / k_fold for metric_key, metric_value in cv_metrics.items()}
+
+
+def grid_search_cv(data_paths, param_grid, model_fn, train_fn, test_fn, transform_fn,
+                   scoring: str = 'accuracy', k_fold=5, seed=1):
+    best_score = None
+    best_params = None
+    best_metrics = None
     parameter_space = []
 
     for param, values in param_grid.items():
@@ -247,19 +278,37 @@ def run_245(param_grid):
             values = [values]
 
         for value in values:
-            parameters.append(Parameter(name=param, value=value))
+            # Convert other sequences to tuple to make the parameter accesible to be used as a dictionary key
+            parameters.append(Parameter(name=param, value=value if np.isscalar(value) else tuple(value)))
 
         parameter_space.append(parameters)
+    
+    transformations = {}
+    transform_params = list(inspect.signature(transform_fn).parameters.keys()) if transform_fn else None
 
     for params in product(*parameter_space):
         params_dict = {param.name: param.value for param in params}
-    
-        pipeline = AABB245_Pipeline(num_blocks=params_dict.get('num_blocks', 8), extrema_th=params_dict.get('extrema_th', 8))
-        dataset = PolymerDataset(params_dict['data_paths'], pipeline)
-        model = MultiOutputLSTM(input_dim=dataset.num_features, output_dim=dataset.num_classes, num_blocks=dataset.num_blocks)
-        train_data, test_data = train_test_split(dataset)
-        model, metrics = train(train_dataset=train_data, test_dataset=test_data, model=model,
-                               batch_size=params_dict.get('batch_size', 512), num_epochs=params_dict.get('num_epochs', 100),
-                               lr_rate=params_dict.get('lr_rate', 0.001),
-                               weight_decay=params_dict.get('weight_decay', 0.001),
-                               verbose=0)
+
+        # Check if the transformation already exists with these parameters and avoid extra computation
+        common_params = tuple([param for param in params if param.name in transform_params])
+        dataset = transformations.get(common_params)
+        if dataset is None:
+            # Store transformations for later use
+            dataset = transform_fn(data_paths, **params_dict)
+            transformations[common_params] = dataset
+
+        model = model_fn(dataset=dataset, **params_dict)
+        train_fn_partial = partial(train_fn, **params_dict)
+        test_fn_partial = partial(test_fn, **params_dict)
+
+        metrics = cross_validate(dataset=dataset, model=model, train_fn=train_fn_partial, test_fn=test_fn_partial,
+                                 k_fold=k_fold, seed=seed)
+
+        score = metrics[scoring]
+        
+        if best_score is None or score < best_score:
+            best_score = score
+            best_params = params
+            best_metrics = metrics
+
+    return {param.name: param.value for param in best_params}, best_metrics

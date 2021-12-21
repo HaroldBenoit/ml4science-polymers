@@ -143,9 +143,10 @@ class AABB245_Pipeline(Pipeline):
 
     def extract_features(self, event):
         basic_features = extract_basic_features(event)
-        extrema_features = extract_extrema_features(event, extrema_th=self.extrema_th)
-        fft_features = extract_fft_features(event)
-        return np.concatenate([basic_features, extrema_features, fft_features])
+        # extrema_features = extract_extrema_features(event, extrema_th=self.extrema_th)
+        # fft_features = extract_fft_features(event)
+        # return np.concatenate([basic_features, extrema_features, fft_features])
+        return basic_features
 
 
 class AA0066_Pipeline(Pipeline):
