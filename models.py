@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Generator
 import inspect
 import numpy as np
 from collections import namedtuple, defaultdict
@@ -17,7 +17,7 @@ Parameter = namedtuple('Parameter', ['name', 'value'])
 
 class LeakyReluLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64, *args, **kwargs):
+    def __init__(self, input_dim: int, output_dim: int = 2, num_layers: int = 1, hidden_dim: int = 64, *args, **kwargs):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
@@ -34,7 +34,7 @@ class LeakyReluLSTM(nn.Module):
             'lstm_num_layers': self.lstm.num_layers
         }
     
-    def forward(self, X):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         outputs, _ = self.lstm(X)
         outputs = outputs[:, -1, :]
 
@@ -45,7 +45,7 @@ class LeakyReluLSTM(nn.Module):
 
         return probs
 
-    def predict(self, X):
+    def predict(self, X: torch.Tensor) -> torch.Tensor:
         probs = self.forward(X)
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
@@ -53,14 +53,12 @@ class LeakyReluLSTM(nn.Module):
 
 class VanillaLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, hidden_dim=64, *args, **kwargs):
+    def __init__(self, input_dim: int, output_dim: int = 2, num_layers: int = 1, hidden_dim: int = 64, *args, **kwargs):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, output_dim)
 
-
-        
     def info(self):
         return {
             'model_name': 'VanillaLSTM',
@@ -69,7 +67,7 @@ class VanillaLSTM(nn.Module):
             'lstm_num_layers': self.lstm.num_layers
         }
     
-    def forward(self, X):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         outputs, _ = self.lstm(X)
         outputs = outputs[:, -1, :]
 
@@ -80,10 +78,11 @@ class VanillaLSTM(nn.Module):
 
         return probs
 
-    def predict(self, X):
+    def predict(self, X: torch.Tensor) -> torch.Tensor:
         probs = self.forward(X)
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
+
 
 class AugmentedLSTM(nn.Module):
 
@@ -93,8 +92,6 @@ class AugmentedLSTM(nn.Module):
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, output_dim)
 
-
-        
     def info(self):
         return {
             'model_name': 'AugmentedLSTM',
@@ -122,7 +119,7 @@ class AugmentedLSTM(nn.Module):
 
 class MultiOutputLSTM(nn.Module):
 
-    def __init__(self, input_dim, output_dim=2, num_layers=1, num_blocks=100, hidden_dim=64, *args, **kwargs) -> None:
+    def __init__(self, input_dim: int, output_dim: int = 2, num_layers: int = 1, num_blocks: int = 100, hidden_dim: int = 64, *args, **kwargs) -> None:
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=1, batch_first=True)
         self.linear1 = nn.Linear(num_blocks, hidden_dim)
@@ -138,7 +135,7 @@ class MultiOutputLSTM(nn.Module):
             'lstm_num_layers': self.lstm.num_layers
         }
 
-    def forward(self, X):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         outputs, _ = self.lstm(X)
         outputs = outputs.view(outputs.shape[0], outputs.shape[1])
         outputs = self.linear1(F.relu(outputs))
@@ -147,13 +144,30 @@ class MultiOutputLSTM(nn.Module):
         probs = F.log_softmax(outputs, dim=1)
         return probs
     
-    def predict(self, X):
+    def predict(self, X: torch.Tensor) -> torch.Tensor:
         probs = self.forward(X)
         preds = torch.argmax(probs, dim=1, keepdim=False)
         return preds
 
 
-def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=512, weight_decay=0.001, lr_rate=0.001, verbose=2, log=True, *args, **kwargs):
+def train(train_dataset: Dataset, model: nn.Module, test_dataset: Dataset = None, num_epochs: int = 100, batch_size: int = 512,
+          weight_decay: float = 0.001, lr_rate: float = 0.001, verbose: int = 2, log: bool = True, *args, **kwargs):
+    """Train a neural network model
+
+    Args:
+        train_dataset (Dataset): Train dataset
+        model (nn.Module): Model to train
+        test_dataset (Dataset, optional): Test dataset. Defaults to None.
+        num_epochs (int, optional): Number of epochs. Defaults to 100.
+        batch_size (int, optional): Batch size. Defaults to 512.
+        weight_decay (float, optional): Weight decay for optimizer. Defaults to 0.001.
+        lr_rate (float, optional): Learning rate for the model. Defaults to 0.001.
+        verbose (int, optional): Verbosity level. 2 is highest and 0 is lowest. Defaults to 2.
+        log (bool, optional): Whether to log results to wandb. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
     full_dataset = train_dataset.dataset if isinstance(train_dataset, Subset) else train_dataset
     config = dict(
         **full_dataset.info(),
@@ -214,7 +228,17 @@ def train(train_dataset, model, test_dataset=None, num_epochs=100, batch_size=51
     return model, test_metrics
 
 
-def test(dataset, model, batch_size=4096, *args, **kwargs):
+def test(dataset: Dataset, model: nn.Module, batch_size: int = 4096, *args, **kwargs) -> dict:
+    """Test model on a dataset and report metrics
+
+    Args:
+        dataset (Dataset): Test dataset
+        model (nn.Module): Model to test
+        batch_size (int, optional): Batch size. Defaults to 4096.
+
+    Returns:
+        dict: Metrics as a dictionary
+    """
     full_dataset = dataset.dataset if isinstance(dataset, Subset) else dataset
     multiclass = full_dataset.num_classes > 2
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
@@ -238,7 +262,17 @@ def test(dataset, model, batch_size=4096, *args, **kwargs):
     return metrics
 
 
-def kfold_cv_iter(dataset, k=5, seed=1):
+def kfold_cv_iter(dataset: Dataset, k: int = 5, seed: int = 1) -> Generator:
+    """Iterate over K folds of data
+
+    Args:
+        dataset (Dataset): Input dataset
+        k (int, optional): Number of folds. Defaults to 5.
+        seed (int, optional): Random seed. Defaults to 1.
+
+    Yields:
+        Generator: [description]
+    """
     num_samples = len(dataset)
     fold_size = int(num_samples / k)
     np.random.seed(seed)
@@ -250,7 +284,20 @@ def kfold_cv_iter(dataset, k=5, seed=1):
         yield Subset(dataset, train_indices), Subset(dataset, test_indices)
 
 
-def cross_validate(dataset, model, train_fn, test_fn, k_fold=5, seed=42):
+def cross_validate(dataset: Dataset, model: nn.Module, train_fn: Callable, test_fn: Callable, k_fold: int = 5, seed: int = 42) -> dict:
+    """Cross validate the model on the given dataset.
+
+    Args:
+        dataset (Dataset): Input dataset
+        model (nn.Module): Model to evaluate
+        train_fn (Callable): Train function
+        test_fn (Callable): Test function
+        k_fold (int, optional): Number of CV folds. Defaults to 5.
+        seed (int, optional): Random seed. Defaults to 42.
+
+    Returns:
+        dict: [description]
+    """
     cv_metrics = defaultdict(int)
 
     for train_dataset, test_dataset in kfold_cv_iter(dataset, k=k_fold, seed=seed):
@@ -262,8 +309,24 @@ def cross_validate(dataset, model, train_fn, test_fn, k_fold=5, seed=42):
     return {metric_key: metric_value / k_fold for metric_key, metric_value in cv_metrics.items()}
 
 
-def grid_search_cv(data_paths, param_grid, model_fn, train_fn, test_fn, transform_fn,
-                   scoring: str = 'accuracy', k_fold=5, seed=1):
+def grid_search_cv(data_paths: List[str], param_grid: Dict[str, Any], model_fn: Callable, train_fn: Callable,
+                   test_fn: Callable, transform_fn: Callable, scoring: str = 'accuracy', k_fold: int = 5, seed: int = 1) -> Tuple[dict, dict]:
+    """Grid search over the given parameter space and select params and metrics for best performing models.
+
+    Args:
+        data_paths (List[str]): List of data paths
+        param_grid (Dict[str, Any]): Parameter grid to search in
+        model_fn (Callable): Model builder function
+        train_fn (Callable): Training function
+        test_fn (Callable): Testing function
+        transform_fn (Callable): Data transformation function.
+        scoring (str, optional): Scoring metric to use. Defaults to 'accuracy'.
+        k_fold (int, optional): Number of CV folds. Defaults to 5.
+        seed (int, optional): Random seed. Defaults to 1.
+
+    Returns:
+        Tuple[dict, dict]: [description]
+    """
     best_score = None
     best_params = None
     best_metrics = None
@@ -304,7 +367,7 @@ def grid_search_cv(data_paths, param_grid, model_fn, train_fn, test_fn, transfor
 
         score = metrics[scoring]
         
-        if best_score is None or score < best_score:
+        if best_score is None or score > best_score:
             best_score = score
             best_params = params
             best_metrics = metrics
