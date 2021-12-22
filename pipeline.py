@@ -91,7 +91,7 @@ class Pipeline:
                 data.append(processed_event)
                 labels.append(data_index)
 
-        return data, labels
+        return np.array(data), np.array(labels)
     
     def transform(self, data):
         return data
