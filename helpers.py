@@ -56,16 +56,16 @@ def count_extremums(row: np.ndarray) -> int:
         tmp = i
     return counter
 
-def timestamp(row: np.ndarray) -> Tuple:
-    """Return timestamp of the row
+def duration(row: np.ndarray) -> float:
+    """Calculate duration of the data row
 
     Args:
         row (np.ndarray): Data row
 
     Returns:
-        Tuple: Tuple of timestamp values
+        float: Duration
     """
-    return row[1:0], row[-1:0], row[1:0]-row[-1:0]
+    return row[1,0]-row[-1,0]
 
 def max_slope(row: np.ndarray) -> float:
     """Calculate maximum slope
@@ -191,11 +191,16 @@ def extract_fft_features(event: np.ndarray, diff_th: int = 10) -> np.ndarray:
         'std_amp': 0,
         'median_amp': 0,
         'dwell_start': 0,
-        'dwell_end': 0
+        'dwell_end': 0,
+        'main_frequency':0,
+        'secondary_frequency':0,
+        'tertiary_frequency':0,
     }
 
     if len(event) > 0:
+        timestep=event[1,0]-event[0,0]
         fft = np.fft.fft(event[:, 1])
+        frequencies=np.fft.fftfreq(len(event), d=timestep)
         time = event[:, 0]
         amplitudes = np.abs(fft)
         dwells = []

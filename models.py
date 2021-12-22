@@ -15,7 +15,7 @@ import wandb
 Parameter = namedtuple('Parameter', ['name', 'value'])
 
 
-class LeakyReluLSTM(nn.Module):
+class PReLULSTM(nn.Module):
 
     def __init__(self, input_dim: int, output_dim: int = 2, num_layers: int = 1, hidden_dim: int = 64, *args, **kwargs):
         super().__init__()
@@ -23,8 +23,8 @@ class LeakyReluLSTM(nn.Module):
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, output_dim)
 
-        self.af1 = nn.LeakyReLU()
-        self.af2 = nn.LeakyReLU()
+        self.af1 = nn.PReLU()
+        self.af2 = nn.PReLU()
         
     def info(self):
         return {
