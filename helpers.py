@@ -39,8 +39,8 @@ def count_extremums(row):
         tmp=i
     return counter
 
-def timestamp(row):
-    return row[1:0],row[-1:0], row[1:0]-row[-1:0]
+def duration(row):
+    return row[1,0]-row[-1,0]
 
 def max_slope(row):
     maxslope=-1000
@@ -134,11 +134,16 @@ def extract_fft_features(event, diff_th=10):
         'std_amp': 0,
         'dwell_time': 0,
         'dwell_start': 0,
-        'dwell_end': 0
+        'dwell_end': 0,
+        'main_frequency':0,
+        'secondary_frequency':0,
+        'tertiary_frequency':0,
     }
 
     if len(event) > 0:
+        timestep=event[1,0]-event[0,0]
         fft = np.fft.fft(event[:, 1])
+        frequencies=np.fft.fftfreq(len(event), d=timestep)
         time = event[:, 0]
         amplitudes = np.abs(fft)
         dwells = []
@@ -156,6 +161,12 @@ def extract_fft_features(event, diff_th=10):
         features['min_amp'] = np.min(amplitudes)
         features['mean_amp'] = np.mean(amplitudes)
         features['std_amp'] = np.std(amplitudes)
+        fundamentals = np.sort(np.argpartition(amplitudes, -3)[-3:])
+
+        features['main_frequency']=frequencies[fundamentals[0]]
+        features['secondary_frequency']=frequencies[fundamentals[1]]
+        features['tertiary_frequency']=frequencies[fundamentals[2]]
+
 
         if len(dwells) > 0:
             longest_dwell = max(dwells, key=lambda d: len(d))
