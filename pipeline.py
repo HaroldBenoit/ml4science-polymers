@@ -1,19 +1,17 @@
+import pickle
 from abc import ABC, abstractmethod
 
-import numpy as np
-import pickle
-from numpy.core.shape_base import block
-import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import torch
-from torch.serialization import save
-from torch.utils import data
-
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from numpy.core.shape_base import block
+from torch.serialization import save
+from torch.utils import data
+from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 from helpers import *
@@ -24,6 +22,14 @@ torch.manual_seed(1)
 
 
 def balance_data(data):
+    """Balance M datasets so they have the same number of datapoints across all classes
+
+    Args:
+        data (np.array of shape (M,N,X,2)): Contains M datasets each of a different class with dim (X,2) where N might not be equal amongst all M datasets
+
+    Returns:
+        data (np.array of shape (M,N',X,2)): Contains M datasets each of a different class where N' is the smallest size of all the datsets given
+    """    
     balanced_data = []
     min_data_size = min([len(d) for d in data])
     for events in data:
@@ -33,6 +39,20 @@ def balance_data(data):
 
 
 def filter_data(data, by_quantile=True, min_quantile=0.1, max_quantile=0.9, min_len=50, max_len=10000, num_blocks=None):
+    """Filters a dataset so that we only keep the rows that have a reasonable length (that are neither a misinterpreted event nor a polymer that got stuck)
+
+    Args:
+        data (np.array of shape (N,X,2)): datasets of raw events with some too long, and other too short
+        by_quantile (bool, optional): Whether or not we should compute the outliers using quantiles. Defaults to True.
+        min_quantile (float, optional): Quantile under which we should discard the event. Defaults to 0.1.
+        max_quantile (float, optional): Quantile over which we should discard the data. Defaults to 0.9.
+        min_len (int, optional): Minimum length an event should satisfy. Defaults to 50.
+        max_len (int, optional): Maximum length an event should satisfy. Defaults to 10000.
+        num_blocks (int, optional): Number of blocks each event has been divided by. Defaults to None.
+
+    Returns:
+        (np.array of shape (N',X,2)): datasets of filtered event with reasonable sizes
+    """    
     clean_data = []
     ## such that the max function below is well defined
     if num_blocks is None:
@@ -54,6 +74,20 @@ def filter_data(data, by_quantile=True, min_quantile=0.1, max_quantile=0.9, min_
 
 
 def standardize_data(data, axis=0):
+    """Standardizes the data X-> (X-mean(X))/std(X)
+
+    Args:
+        data (np.array of shape (N,B,L/B,F)): data we want to standardize where :
+            -N is th number of events
+            -B is the number of blocks
+            -L is the length of an event
+            -F is the number of features computed
+
+        axis (int, optional): axis over which we want to compute the metrics. Defaults to 0.
+
+    Returns:
+        np.array of shape np.array of dim(N,B,L/B,F): Standardized data
+    """    
     data = np.array(data)
     data_mean = data.mean(axis=axis, keepdims=True)
     data_std = data.std(axis=axis, keepdims=True)
@@ -64,22 +98,56 @@ def standardize_data(data, axis=0):
 
 
 class Pipeline:
+    """Pipeline used to define the transformations that will be applied to a dataset
+    """    
     def __init__(self, num_blocks=None, block_size=None) -> None:
+        """The constructor for a Pipeline
+
+        Args:
+            num_blocks (int, optional): . Defaults to None.
+            block_size (int, optional): number of features per block. Defaults to None.
+        """        
         self.data_paths = []
         self.num_blocks = num_blocks
         self.block_size = block_size
 
     def info(self):
+        """Recap of the hyper-parameters for logging purposes
+
+        Returns:
+            dict(string -> string): dictionnary mapping for the hyper-parameters to their respective values
+        """        
         return {
             'num_blocks': self.num_blocks,
             'block_size': self.block_size
         }
 
     def load(self, data_paths):
+        """Allows to load datasets to a pipeline from a path
+
+        Args:
+            data_paths (list(str)): Path where the dataset is located
+
+        Returns:
+            np.array of shape (M,X,2): arrays of the datasets located at the provided paths
+        """        
         self.data_paths = data_paths
         return [np.load(data_path, allow_pickle=True) for data_path in data_paths]
 
     def process(self, raw_data):
+        """Chunks and processes the features of a whole dataset 
+
+        Args:
+            raw_data (np.array of shape (N,X,2)): Dataset that needs to be chunked in block and processed
+
+        Returns:
+            (np.array of shape (N,B,F), np.array of shape (N)): array of the features that will be used for classification where:
+                -N is the number of events, 
+                -B the number of blocks, 
+                -F the number of features
+                and an array of the label of each event
+
+        """        
         data = []
         labels = []
         max_event_len = np.max([len(event) for events in raw_data for event in events])
@@ -94,21 +162,78 @@ class Pipeline:
         return np.array(data), np.array(labels)
     
     def transform(self, data):
+        """Computes transformation of the dataset (i.e. FFT, auto-correlation, etc...)
+
+        Args:
+            data (np.array of shape (N,X,2)): dataset for which we want to compute the transformations of.
+
+        Returns:
+            np.array of shape: (N,X,2+T) where T is the number of transfomations applied
+        """        
         return data
     
     def extract_features(self, event):
+        """Computes the features of a given event
+
+        Args:
+            event (np.array of shape (B,N//B,2+T)): event for which we want to compute the features for where :
+                -B is the number of blocks
+                -N is the size of the event
+                -T is the number of transformations applied to the data
+
+        Returns:
+            np.array of shape (B,F): processed features for the event where :
+                -B is the number of blocks
+                -F is the number of features 
+        """        
         return []
     
     def balance(self, data):
+        """Balances dataset so each class has the same number of events to classify
+
+        Args:
+            data (np.array of shape (M,N,X,2)): dataset we want to balance where :
+                -M is the number of source datasets/classes
+                -N is the number of events (varies for each class)
+                -X is the length of each event (whch varies for each event)
+
+
+        Returns:
+            data (np.array of shape (M,N',X,2)): Contains M datasets each of a different class where N' is the smallest size of all the datsets given
+        """        
         return balance_data(data)
     
     def filter(self, data):
+        """filters the events of a given datasets
+
+        Args:
+            data (np.array of shape (N,X,2)): datasets of raw events with some too long, and other too short
+
+        Returns:
+            (np.array of shape (N',X,2)): datasets of filtered event with reasonable sizes
+        """        
         return filter_data(data)
     
     def standardize(self, data):
+        """standardizes the data of a given dataset
+
+        Args:
+            data (np.array of shape (N,X,2+F)): array of the features we want to standardize
+
+        Returns:
+            (np.array of shape (N,X,2+F): array of the standardized data
+        """        
         return standardize_data(data, axis=0)
 
     def process_event(self, event):
+        """divides an event in blocks, abd processed the feature for each block
+
+        Args:
+            event (np.array(N,2)): event of N measurements of both (current, time)
+
+        Returns:
+            np.array of shape (B,F): features for each block of the given event
+        """        
         processed_event = []
         block_size = self.block_size or int(np.ceil(len(event) / self.num_blocks))
 
@@ -120,7 +245,22 @@ class Pipeline:
         return np.array(processed_event)
 
 class AABB245_Pipeline(Pipeline):
+    """Pipeline for the multi-class classification
+
+    Args:
+        Pipeline ([type]): [description]
+    """    
     def __init__(self, num_blocks=None, block_size=None, extrema_th=0, min_event_len=50, max_event_len=10000, by_quantile=False) -> None:
+        """
+
+        Args:
+            num_blocks ([type], optional): [description]. Defaults to None.
+            block_size ([type], optional): [description]. Defaults to None.
+            extrema_th (int, optional): [description]. Defaults to 0.
+            min_event_len (int, optional): [description]. Defaults to 50.
+            max_event_len (int, optional): [description]. Defaults to 10000.
+            by_quantile (bool, optional): [description]. Defaults to False.
+        """        
         super().__init__(num_blocks=num_blocks, block_size=block_size)
         self.extrema_th = extrema_th
         self.min_event_len = min_event_len
@@ -128,6 +268,11 @@ class AABB245_Pipeline(Pipeline):
         self.by_quantile = by_quantile
 
     def info(self):
+        """Recap of the hyper-parameters for logging purposes
+
+        Returns:
+            dict(string -> string): dictionnary mapping for the hyper-parameters to their respective values
+        """         
         parent_info = super().info()
         return {
             'extrema_th': self.extrema_th,
@@ -138,9 +283,25 @@ class AABB245_Pipeline(Pipeline):
         }
 
     def filter(self, data):
+        """filters the events of a given datasets
+
+        Args:
+            data (np.array of shape (N,X,2)): datasets of raw events with some too long, and other too short
+
+        Returns:
+            (np.array of shape (N',X,2)): datasets of filtered event with reasonable sizes
+        """         
         return filter_data(data, by_quantile=self.by_quantile, min_len=self.min_event_len, max_len=self.max_event_len)
 
     def extract_features(self, event):
+        """[summary]
+
+        Args:
+            event ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         basic_features = extract_basic_features(event)
         extrema_features = extract_extrema_features(event, extrema_th=self.extrema_th)
         fft_features = extract_fft_features(event)
@@ -148,6 +309,11 @@ class AABB245_Pipeline(Pipeline):
 
 
 class AA0066_Pipeline(Pipeline):
+    """Pipeline for the backbone classification
+
+    Args:
+        Pipeline ([type]): [description]
+    """    
     def __init__(self, num_blocks):
         super().__init__(num_blocks=num_blocks)
 
@@ -166,8 +332,21 @@ class AA0066_Pipeline(Pipeline):
         return features        
 
     def filter(self, data):
+        """filters the events of a given datasets
+
+        Args:
+            data (np.array of shape (N,X,2)): datasets of raw events with some too long, and other too short
+
+        Returns:
+            (np.array of shape (N',X,2)): datasets of filtered event with reasonable sizes
+        """    
         return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
 class PairSingle_Pipeline(Pipeline):
+    """Pipeline for the sequence classification
+
+    Args:
+        Pipeline ([type]): [description]
+    """    
     def __init__(self, num_blocks):
         super().__init__(num_blocks=num_blocks)
 
@@ -187,6 +366,14 @@ class PairSingle_Pipeline(Pipeline):
         return features        
 
     def filter(self, data):
+        """filters the events of a given datasets
+
+        Args:
+            data (np.array of shape (N,X,2)): datasets of raw events with some too long, and other too short
+
+        Returns:
+            (np.array of shape (N',X,2)): datasets of filtered event with reasonable sizes
+        """    
         return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
 
 class PolymerDataset(Dataset):
