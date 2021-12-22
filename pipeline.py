@@ -119,7 +119,6 @@ class Pipeline:
 
         return np.array(processed_event)
 
-
 class AABB245_Pipeline(Pipeline):
     def __init__(self, num_blocks=None, block_size=None, extrema_th=0, min_event_len=50, max_event_len=10000, by_quantile=False) -> None:
         super().__init__(num_blocks=num_blocks, block_size=block_size)
@@ -176,8 +175,7 @@ class PairSingle_Pipeline(Pipeline):
         features = np.array([])
 
         current_functions = [np.mean, np.median, np.std, np.min, np.max, len]
-        row_functions = [count_extremums, max_slope, min_slope, timestamp]
-
+        row_functions = [count_extremums, max_slope, min_slope]        
         for func in current_functions:
             features = np.concatenate((features, func(event[:, 1])), axis=None)
 
