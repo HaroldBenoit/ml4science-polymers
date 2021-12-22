@@ -12,6 +12,11 @@ from numpy.core.shape_base import block
 from torch.serialization import save
 from torch.utils import data
 from torch.utils.data import DataLoader, Dataset
+from typing import List
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from helpers import *
@@ -377,7 +382,18 @@ class PairSingle_Pipeline(Pipeline):
         return filter_data(data, by_quantile=True,num_blocks=self.num_blocks)
 
 class PolymerDataset(Dataset):
-    def __init__(self, data_paths, pipeline, seed=42, save_path=None):
+    """
+    Representation of Polymer dataset
+    """
+    def __init__(self, data_paths: List[str], pipeline: Pipeline, seed: int = 42, save_path: str = None) -> None:
+        """Set up a dataset
+
+        Args:
+            data_paths (List[str]): List of data paths to load from
+            pipeline (Pipeline): Processing pipeline
+            seed (int, optional): Random seed. Defaults to 42.
+            save_path (str, optional): Path to save data after processing. Defaults to None.
+        """
         super().__init__()
         self.data_paths = data_paths
         self.pipeline = pipeline
@@ -385,7 +401,12 @@ class PolymerDataset(Dataset):
         if save_path:
             torch.save(self.data, save_path)
 
-    def info(self):
+    def info(self) -> dict:
+        """Return an info about the dataset
+
+        Returns:
+            dict: Info dict
+        """
         return {
             'num_features': self.num_features,
             'num_classes': self.num_classes,
@@ -411,7 +432,14 @@ class PolymerDataset(Dataset):
     def num_blocks(self):
         return self.data.shape[1]
 
-    def process(self, data_paths, pipeline,seed):    
+    def process(self, data_paths: List[str], pipeline: Pipeline, seed: int = 42):
+        """Load and prepare data as a torch dataset
+
+        Args:
+            data_paths (List[str]): List of data paths
+            pipeline (Pipeline): Processing pipeline
+            seed (int, optional): Random seed. Defaults to 42.
+        """
         np.random.seed(seed)  
 
         # Load data 

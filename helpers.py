@@ -1,63 +1,114 @@
 import numpy as np
+from typing import Generator, Tuple
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.signal import find_peaks_cwt
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Dataset, Subset
 
 
 
-def split_in_k(y,row,k, seed=1):
+def split_in_k(y: np.ndarray, row: np.ndarray, k: int, seed: int = 1) -> Generator:
+    """Split given data in k parts and return an iterator over the parts
+
+    Args:
+        y (np.ndarray): Data
+        row (np.ndarray): Data row
+        k (int): Number of parts
+        seed (int, optional): Random seed. Defaults to 1.
+
+    Yields:
+        Generator: Iterator over parts
+    """
     chunk_size = len(row)//k
     np.random.seed(seed)
     indices = np.random.permutation(len(row))
     
     for i in range(k):
         index=indices[i * chunk_size: (i + 1) * chunk_size]
-        yield (y,row[index])
+        yield y, row[index]
 
 
-def count_extremums(row):
-    current=row[:,1]
-    if len(current)<3:
+def count_extremums(row: np.ndarray) -> int:
+    """Count number of extrema in the row of data
+
+    Args:
+        row (np.ndarray): Data row
+
+    Returns:
+        int: Number of extrema
+    """
+    current = row[:, 1]
+    if len(current) < 3:
         return 0
-    increasing = current[0]<current[1]
-    tmp=current[0]
+    increasing = current[0] < current[1]
+    tmp = current[0]
     counter = 0
-    values=[]
+    values = []
     for i in current[1:]:
-        if increasing and i<tmp:
+        if increasing and i < tmp:
             increasing = False
-            counter +=1
+            counter += 1
             values.append(i)
-        elif not increasing and i>tmp:
-            increasing=True
-            counter+=1
+        elif not increasing and i > tmp:
+            increasing = True
+            counter += 1
             values.append(i)
 
-        tmp=i
+        tmp = i
     return counter
 
-def duration(row):
+def duration(row: np.ndarray) -> float:
+    """Calculate duration of the data row
+
+    Args:
+        row (np.ndarray): Data row
+
+    Returns:
+        float: Duration
+    """
     return row[1,0]-row[-1,0]
 
-def max_slope(row):
-    maxslope=-1000
+def max_slope(row: np.ndarray) -> float:
+    """Calculate maximum slope
+
+    Args:
+        row (np.ndarray): Data row
+
+    Returns:
+        float: Maximum slope
+    """
+    maxslope = -1000
     for i in range(len(row)-1):
-        if (row[i+1,0]-row[i,0])!=0 and (row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])>maxslope:
-            maxslope=(row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])
+        if (row[i+1, 0] - row[i, 0]) != 0 and (row[i+1, 1] - row[i, 1]) / (row[i+1, 0] - row[i, 0]) > maxslope:
+            maxslope = (row[i+1, 1] - row[i, 1]) / (row[i+1, 0] - row[i, 0])
     return maxslope
 
 
-def min_slope(row):
-    minslope=1000
-    for i in range(len(row)-1):
-        if (row[i+1,0]-row[i,0])!=0 and (row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])<minslope:
-            minslope=(row[i+1,1]-row[i,1])/(row[i+1,0]-row[i,0])
+def min_slope(row: np.ndarray) -> float:
+    """Calculate minimum slope
 
+    Args:
+        row (np.ndarray): Data row
+
+    Returns:
+        float: Minimum slope
+    """
+    minslope = 1000
+    for i in range(len(row)-1):
+        if (row[i+1, 0] - row[i, 0]) != 0 and (row[i+1, 1] - row[i, 1]) / (row[i+1, 0] - row[i, 0]) < minslope:
+            minslope = (row[i+1, 1] - row[i, 1]) / (row[i+1, 0] - row[i, 0])
     return minslope
 
 
-def find_extrema(event, extrema_th=2):
+def find_extrema(event: np.ndarray, extrema_th: int = 2) -> Tuple[np.ndarray, np.ndarray]:
+    """Find extrema of a sequence
+
+    Args:
+        event (np.ndarray): Sequence of (time, current) pairs
+        extrema_th (int, optional): Min threshold on the 2 nearby extrema difference. Defaults to 2.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Tuple of peaks and lows
+    """
     extrema = []
     peaks = []
     lows = []
@@ -81,16 +132,15 @@ def find_extrema(event, extrema_th=2):
     return np.array(peaks), np.array(lows)
 
 
-def find_current_diffs(event):
-    current_diffs = []
+def plot_data(data: np.ndarray, plot_extrema: bool = False, plot_fft: bool = False, extrema_th: int = 0) -> None:
+    """Plot signal data
 
-    for i in range(1, len(event)):
-        current_diffs.append(event[i, 1] - event[i-1, 1])
-    
-    return np.array(current_diffs)
-
-
-def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=0):
+    Args:
+        data (np.ndarray): Signal data
+        plot_extrema (bool, optional): Plot extrema points. Defaults to False.
+        plot_fft (bool, optional): Plot FFT amplitudes. Defaults to False.
+        extrema_th (int, optional): Extrema threshold. Defaults to 0.
+    """
     if data.ndim > 1:
         data = np.expand_dims(data, axis=0)
 
@@ -124,7 +174,16 @@ def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=0):
             ax.axvspan(fft_features[-2], fft_features[-1], color='yellow')
 
 
-def extract_fft_features(event, diff_th=10):
+def extract_fft_features(event: np.ndarray, diff_th: int = 10) -> np.ndarray:
+    """Extract FFT features from an event
+
+    Args:
+        event (np.ndarray): Sequence of (time, current) pairs
+        diff_th (int, optional): Difference threshold to determine FFT dwell. Defaults to 10.
+
+    Returns:
+        np.ndarray: FFT features
+    """
     features = {
         'max_amp': 0,
         'min_amp': 0,
@@ -170,7 +229,16 @@ def extract_fft_features(event, diff_th=10):
     return np.array(list(features.values()))
 
 
-def extract_extrema_features(event, extrema_th=0):
+def extract_extrema_features(event: np.ndarray, extrema_th: int = 0) -> np.ndarray:
+    """Extract extrema features from an event
+
+    Args:
+        event (np.ndarray): Sequence of (time, current) pairs
+        extrema_th (int, optional): Extrema threshold. Defaults to 0.
+
+    Returns:
+        np.ndarray: Extrema features
+    """
     features = {
         'num_peaks': 0,
         'num_lows': 0,
@@ -192,7 +260,15 @@ def extract_extrema_features(event, extrema_th=0):
     return np.array(list(features.values()))
 
 
-def extract_basic_features(event):
+def extract_basic_features(event: np.ndarray) -> np.ndarray:
+    """Extract basic features from an event
+
+    Args:
+        event (np.ndarray): Sequence of (time, current) pairs 
+
+    Returns:
+        np.ndarray: Basic features
+    """
     features = {
         'event_len': 0, 
         'dwell_time': 0,
@@ -214,7 +290,16 @@ def extract_basic_features(event):
     return np.array(list(features.values()))
 
 
-def train_test_split(dataset, test_size=0.2):
+def train_test_split(dataset: Dataset, test_size: float = 0.2) -> Tuple[Subset, Subset]:
+    """Split the dataset into train and test data
+
+    Args:
+        dataset (Dataset): Full torch dataset
+        test_size (float, optional): Test data size. Defaults to 0.2.
+
+    Returns:
+        Tuple[Subset, Subset]: Train and test data
+    """
     test_size = int(test_size * len(dataset))
     train_size = len(dataset) - test_size
     train_data, test_data = random_split(dataset, [train_size, test_size])
