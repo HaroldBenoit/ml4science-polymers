@@ -13,8 +13,6 @@ def split_in_k(y,row,k, seed=1):
     
     for i in range(k):
         index=indices[i * chunk_size: (i + 1) * chunk_size]
-
-
         yield (y,row[index])
 
 
@@ -92,7 +90,7 @@ def find_current_diffs(event):
     return np.array(current_diffs)
 
 
-def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=2):
+def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=0):
     if data.ndim > 1:
         data = np.expand_dims(data, axis=0)
 
@@ -123,7 +121,7 @@ def plot_data(data, plot_extrema=False, plot_fft=False, extrema_th=2):
             fft_features = extract_fft_features(event)
             ax.set_yscale('log')
             ax.plot(time, amplitudes, color='grey')
-            ax.axvspan(fft_features['dwell_start'], fft_features['dwell_end'], color='yellow')
+            ax.axvspan(fft_features[-2], fft_features[-1], color='yellow')
 
 
 def extract_fft_features(event, diff_th=10):
@@ -132,7 +130,7 @@ def extract_fft_features(event, diff_th=10):
         'min_amp': 0,
         'mean_amp': 0,
         'std_amp': 0,
-        'dwell_time': 0,
+        'median_amp': 0,
         'dwell_start': 0,
         'dwell_end': 0
     }
@@ -156,35 +154,13 @@ def extract_fft_features(event, diff_th=10):
         features['min_amp'] = np.min(amplitudes)
         features['mean_amp'] = np.mean(amplitudes)
         features['std_amp'] = np.std(amplitudes)
+        features['median_amp'] = np.median(amplitudes)
 
         if len(dwells) > 0:
             longest_dwell = max(dwells, key=lambda d: len(d))
             if len(longest_dwell) > 0:
-                features['dwell_time'] = longest_dwell[-1]-longest_dwell[0]
                 features['dwell_start'] = longest_dwell[0]
                 features['dwell_end'] = longest_dwell[-1]
-    
-    return np.array(list(features.values()))
-
-def extract_peak_features(event):
-    peaks_idx = find_peaks_cwt(event[:, 1], widths=max([1, event[-1][0]]))
-    features = {
-        'num_peaks': len(peaks_idx),
-        'mean_peaks': 0,
-        'peak_1': 0, 
-        'peak_2': 0,
-        'peak_3': 0,
-        'peak_4': 0,
-        'peak_5': 0
-    }
-    if len(peaks_idx) > 0:
-        peaks = sorted(event[peaks_idx][:, 1], reverse=True)
-        features['mean_peaks'] = np.mean(peaks)
-        features['peak_1'] = peaks[0] if len(peaks) > 0 else 0
-        features['peak_2'] = peaks[1] if len(peaks) > 1 else 0
-        features['peak_3'] = peaks[2] if len(peaks) > 2 else 0
-        features['peak_4'] = peaks[3] if len(peaks) > 3 else 0
-        features['peak_5'] = peaks[4] if len(peaks) > 4 else 0
     
     return np.array(list(features.values()))
 
@@ -210,22 +186,25 @@ def extract_extrema_features(event, extrema_th=0):
     
     return np.array(list(features.values()))
 
+
 def extract_basic_features(event):
     features = {
-        'num_signals': 0, 
-        'duration': 0,
+        'event_len': 0, 
+        'dwell_time': 0,
         'max_current': 0, 
         'min_current': 0, 
         'mean_current': 0,
-        'std_current': 0
+        'std_current': 0,
+        'median_current': 0
     }
     if len(event) > 0:
-        features['num_signals'] = len(event)
-        features['duration'] = event[-1][0]
+        features['event_len'] = len(event)
+        features['dwell_time'] = event[-1][0]-event[0][0]
         features['max_current'] = np.max(event[:, 1])
         features['min_current'] = np.min(event[:, 1])
         features['mean_current'] = np.mean(event[:, 1])
         features['std_current'] = np.std(event[:, 1])
+        features['median_current'] = np.median(event[:, 1])
 
     return np.array(list(features.values()))
 
