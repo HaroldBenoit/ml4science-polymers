@@ -299,13 +299,13 @@ class AABB245_Pipeline(Pipeline):
         return filter_data(data, by_quantile=self.by_quantile, min_len=self.min_event_len, max_len=self.max_event_len)
 
     def extract_features(self, event):
-        """[summary]
+        """extracts the features for the multi-class classification. With basic features (mean, std, etc...) and features computed on the Fast Fourrier Transform (fundamental frequencies, etc...)
 
         Args:
-            event ([type]): [description]
+            event (np.array of shape(N,X,2)): datasets of N events of X measurements (different for each) with a timestamp and a relative current for each event.
 
         Returns:
-            [type]: [description]
+            np.array of shape (N,B,F): features of each divided event
         """        
         basic_features = extract_basic_features(event)
         extrema_features = extract_extrema_features(event, extrema_th=self.extrema_th)
@@ -323,6 +323,14 @@ class AA0066_Pipeline(Pipeline):
         super().__init__(num_blocks=num_blocks)
 
     def extract_features(self, event):
+        """extracts the features for the backbone classification. With basic features (mean, std, etc...)
+
+        Args:
+            event (np.array of shape(N,X,2)): datasets of N events of X measurements (different for each) with a timestamp and a relative current for each event.
+
+        Returns:
+            np.array of shape (N,B,F): features of each divided event
+        """          
         features = np.array([])
 
         current_functions = [np.mean, np.median, np.std, np.min, np.max, len]
@@ -356,6 +364,14 @@ class PairSingle_Pipeline(Pipeline):
         super().__init__(num_blocks=num_blocks)
 
     def extract_features(self, event):
+        """extracts the features for the sequence classification. With basic features (mean, std, etc...) and features computed on the Fast Fourrier Transform (fundamental frequencies, etc...)
+
+        Args:
+            event (np.array of shape(N,X,2)): datasets of N events of X measurements (different for each) with a timestamp and a relative current for each event.
+
+        Returns:
+            np.array of shape (N,B,F): features of each divided event
+        """   
         features = np.array([])
 
         current_functions = [np.mean, np.median, np.std, np.min, np.max, len]
