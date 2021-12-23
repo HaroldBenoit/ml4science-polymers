@@ -12,6 +12,8 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 import wandb
 
 
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 Parameter = namedtuple('Parameter', ['name', 'value'])
 
 
@@ -189,11 +191,14 @@ def train(train_dataset: Dataset, model: nn.Module, test_dataset: Dataset = None
     loss_function = torch.nn.NLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr_rate, weight_decay=weight_decay)
 
+    model.to(DEVICE)
+
     for epoch in range(num_epochs):
         num_correct = 0
         losses = []
 
         for X, y in iter(data_loader):
+            X, y = X.to(DEVICE), y.to(DEVICE)
             model.zero_grad()
             probs = model(X)
             loss = loss_function(probs, y)
@@ -247,8 +252,9 @@ def test(dataset: Dataset, model: nn.Module, batch_size: int = 4096, *args, **kw
 
     with torch.no_grad():
         for X, y in iter(data_loader):
+            X = X.to(DEVICE)
             preds = model.predict(X)
-            predictions = np.concatenate((predictions, preds), axis=None)
+            predictions = np.concatenate((predictions, preds.cpu()), axis=None)
             labels = np.concatenate((labels, y), axis=None)
 
     metrics = {
@@ -271,7 +277,7 @@ def kfold_cv_iter(dataset: Dataset, k: int = 5, seed: int = 1) -> Generator:
         seed (int, optional): Random seed. Defaults to 1.
 
     Yields:
-        Generator: [description]
+        Generator: Iterator over dataset k times
     """
     num_samples = len(dataset)
     fold_size = int(num_samples / k)
@@ -296,7 +302,7 @@ def cross_validate(dataset: Dataset, model: nn.Module, train_fn: Callable, test_
         seed (int, optional): Random seed. Defaults to 42.
 
     Returns:
-        dict: [description]
+        dict: CV metrics
     """
     cv_metrics = defaultdict(int)
 
@@ -325,7 +331,7 @@ def grid_search_cv(data_paths: List[str], param_grid: Dict[str, Any], model_fn: 
         seed (int, optional): Random seed. Defaults to 1.
 
     Returns:
-        Tuple[dict, dict]: [description]
+        Tuple[dict, dict]: Tuple of best params and metrics
     """
     best_score = None
     best_params = None
