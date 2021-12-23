@@ -401,7 +401,7 @@ class PolymerDataset(Dataset):
     """
     Representation of Polymer dataset
     """
-    def __init__(self, data_paths: List[str], pipeline: Pipeline, seed: int = 42, save_path: str = None) -> None:
+    def __init__(self, data_paths: List[str], pipeline: Pipeline, seed: int = 42, save_path: str = None, load_path: str = None) -> None:
         """Set up a dataset
 
         Args:
@@ -409,13 +409,19 @@ class PolymerDataset(Dataset):
             pipeline (Pipeline): Processing pipeline
             seed (int, optional): Random seed. Defaults to 42.
             save_path (str, optional): Path to save data after processing. Defaults to None.
+            load_path (str, optional): Path to load data from. Defaults to None.
         """
         super().__init__()
         self.data_paths = data_paths
         self.pipeline = pipeline
-        self.process(data_paths, pipeline, seed)
+        if load_path:
+            self.data = torch.load(f'{load_path}_data.pt')
+            self.labels = torch.load(f'{load_path}_labels.pt')
+        else:
+            self.process(data_paths, pipeline, seed)
         if save_path:
-            torch.save(self.data, save_path)
+            torch.save(self.data, f'{save_path}_data.pt')
+            torch.save(self.labels, f'{save_path}_labels.pt')
 
     def info(self) -> dict:
         """Return an info about the dataset

@@ -12,6 +12,7 @@ This project was done in collaboration with the EPFL Laboratory for Biomolecular
 
 ## Repo Structure
 This repo is organized as following:
+* `requirements.txt` - This file contains all the dependencies to run this project.
 * `pipeline.py` - This file contains the implementation of our data processing pipeline to go from polymer reading events of varied lengths to data usable by ML algorithms, especially neural networks. For a comprehensive overview of the inner workings of the pipeline, we refer the reader back to the *Data processing pipeline* section of our report.
 * `models.py` - This file contains the implementation of the neural networks model used in our work. Additionally, helper functions specific to neural networks can be found there.
 * `helpers.py` - This file contains the code for various helper functions to complement ML algorithms and perform exploratory analysis, preprocessing, feature engineering.
@@ -21,6 +22,11 @@ This repo is organized as following:
 * **`backbone`** - This folder contains the research done on distinguishing between using the '0' backbone and the '6' backbone.
 
 
+## Setup
+This project requires python >= 3.7 and dependencies can be installed using the `requirements.txt` in your favorite python virtual environment:
+```sh
+pip install -r requirements.txt
+```
 
 ## Project
 
