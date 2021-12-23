@@ -35,7 +35,7 @@ pip install -r requirements.txt
 Our data is electrical relative current time series. Here are its specificities:
 
 * The lengths of the relative current time-series span a wide range of values, ranging from 0.3 milliseconds to  2 seconds. One reason is that some polymers get stuck in the nanopore and do some sort of back and forth in it before finally leaving.
-* Two events are indistinguishable for the human eye. Both in time series, autocorrelation, and frequency domain representations.
+*  Two different polymer sequence events are indistinguishable for the human eye. Both in time series, autocorrelation, and frequency domain representations.
 * The relative current sensor has a slow response time in its measurements. Thus the relative current measured is highly dependent on the speed of the polymer passing through. 
 
 
