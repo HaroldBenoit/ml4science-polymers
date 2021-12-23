@@ -83,39 +83,6 @@ class VanillaLSTM(nn.Module):
         return preds
 
 
-class AugmentedLSTM(nn.Module):
-
-    def __init__(self, input_dim, output_dim=2, num_layers=2, hidden_dim=64, *args, **kwargs):
-        super().__init__()
-        self.lstm = nn.LSTM(input_size=input_dim, num_layers=num_layers, hidden_size=hidden_dim, batch_first=True)
-        self.linear1 = nn.Linear(hidden_dim, hidden_dim)
-        self.linear2 = nn.Linear(hidden_dim, output_dim)
-
-    def info(self):
-        return {
-            'model_name': 'AugmentedLSTM',
-            'lstm_input_dim': self.lstm.input_size,
-            'lstm_hidden_dim': self.lstm.hidden_size,
-            'lstm_num_layers': self.lstm.num_layers
-        }
-    
-    def forward(self, X):
-        outputs, _ = self.lstm(X)
-        outputs = outputs[:, -1, :]
-
-        outputs = self.linear1(F.relu(outputs))
-        outputs = self.linear2(F.relu(outputs))
-
-        probs = F.log_softmax(outputs, dim=1)
-
-        return probs
-
-    def predict(self, X):
-        probs = self.forward(X)
-        preds = torch.argmax(probs, dim=1, keepdim=False)
-        return preds
-
-
 class MultiOutputLSTM(nn.Module):
 
     def __init__(self, input_dim: int, output_dim: int = 2, num_layers: int = 1, num_blocks: int = 100, hidden_dim: int = 64, *args, **kwargs) -> None:
@@ -150,7 +117,7 @@ class MultiOutputLSTM(nn.Module):
 
 
 def train(train_dataset: Dataset, model: nn.Module, test_dataset: Dataset = None, num_epochs: int = 100, batch_size: int = 512,
-          weight_decay: float = 0.001, lr_rate: float = 0.001, verbose: int = 2, log: bool = True, *args, **kwargs):
+          weight_decay: float = 0.001, lr_rate: float = 0.001, verbose: int = 2, log: bool = True, *args, **kwargs) -> Tuple[nn.Module, dict]:
     """Train a neural network model
 
     Args:
@@ -165,7 +132,7 @@ def train(train_dataset: Dataset, model: nn.Module, test_dataset: Dataset = None
         log (bool, optional): Whether to log results to wandb. Defaults to True.
 
     Returns:
-        [type]: [description]
+        Tuple[nn.Module, dict]: Final trained model and test metrics
     """
     full_dataset = train_dataset.dataset if isinstance(train_dataset, Subset) else train_dataset
     config = dict(
