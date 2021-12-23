@@ -11,9 +11,6 @@ import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 import wandb
 
-
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-
 Parameter = namedtuple('Parameter', ['name', 'value'])
 
 
@@ -191,14 +188,11 @@ def train(train_dataset: Dataset, model: nn.Module, test_dataset: Dataset = None
     loss_function = torch.nn.NLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr_rate, weight_decay=weight_decay)
 
-    model.to(DEVICE)
-
     for epoch in range(num_epochs):
         num_correct = 0
         losses = []
 
         for X, y in iter(data_loader):
-            X, y = X.to(DEVICE), y.to(DEVICE)
             model.zero_grad()
             probs = model(X)
             loss = loss_function(probs, y)
@@ -252,9 +246,8 @@ def test(dataset: Dataset, model: nn.Module, batch_size: int = 4096, *args, **kw
 
     with torch.no_grad():
         for X, y in iter(data_loader):
-            X = X.to(DEVICE)
             preds = model.predict(X)
-            predictions = np.concatenate((predictions, preds.cpu()), axis=None)
+            predictions = np.concatenate((predictions, preds), axis=None)
             labels = np.concatenate((labels, y), axis=None)
 
     metrics = {
