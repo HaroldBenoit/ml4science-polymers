@@ -41,12 +41,20 @@ For each research question, the structure is as follows:
 
 ### Exploratory Data Analysis
 
+Our data is electrical relative current time series. Here are its specificities:
+
 * The lengths of the relative current time-series span a wide range of values, ranging from 0.3 milliseconds to  2 seconds. One reason is that some polymers get stuck in the nanopore and do some sort of back and forth in it before finally leaving.
 * Two events are indistinguishable for the human eye. Both in time series, autocorrelation, and frequency domain representations.
 * The relative current sensor has a slow response time in its measurements. Thus the relative current measured is highly dependent on the speed of the polymer passing through. 
 
-### Preprocessing and Feature Engineering
+### Data processing
+
+Given the specificities of the data, an appropriate data processing pipeline was needed to make the data usable by ML algorithms, especially neural networks. Its details can be found in `pipeline.py`. For a quick comprehensive overview of the inner workings of the pipeline, we refer the reader back to the *Data processing pipeline* section of our report.
 
 
-### Model Selection and Hyperparameter Tuning
+### Model Selection
+
+* In **`multi-class`**, an LSTM model was used. Its details can be found in `multi-class/polymers-245.ipynb`.
+* In **`double-encoding`** , an LSTM model was also used. Its details can be found in `double-encoding/polymer_2_22.ipynb`.
+* In **`backbone`**, a Random Forest model was used. Its details can be found in `backbone/backbone_RF_model.ipynb`.
 
