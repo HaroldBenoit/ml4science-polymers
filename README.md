@@ -38,6 +38,8 @@ Our data is electrical relative current time series. Here are its specificities:
 *  Two different polymer sequence events are indistinguishable for the human eye. Both in time series, autocorrelation, and frequency domain representations.
 * The relative current sensor has a slow response time in its measurements. Thus the relative current measured is highly dependent on the speed of the polymer passing through. 
 
+More EDA analysis details can be found in the notebooks under the respective task.
+
 
 
 ### Data processing
@@ -47,7 +49,7 @@ Given the specificities of the data, an appropriate data processing pipeline was
 
 ### Model Selection
 
-* In **`multi-class`**, an LSTM model was used. Its details can be found in `multi-class/polymers-245.ipynb`.
+* In **`multi-class`**, a Random Forest Classifier and LSTM models were experimented with. Details of the model hyperparameter tuning and final model selection can be found in `multi-class/polymers-245.ipynb`.
 * In **`double-encoding`** , an LSTM model was also used. Its details can be found in `double-encoding/polymer_2_22.ipynb`.
 * In **`backbone`**, a Random Forest model was used. Its details can be found in `backbone/backbone_RF_model.ipynb`.
 
