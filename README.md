@@ -1,7 +1,7 @@
 # Documentation
 
 ## Overview
-This repo contains the work done by (*Lucas Trognon, Harold Benoit, Mahammad Ismayilzada*) to use machine learning to quantify and compare the difficulty of identifying different polymer sequences, as described above. Using this information, we will assess some pitfalls with different encodings (different backbone: ‘0’ ~ ‘6’ or double-encoding: ‘2’ ~ ‘22’) and ultimately find a basis to encode information in these polymers (bulky elements ‘1’ ~ ‘2’ ~ ‘5’). 
+This repo contains the work done by *Lucas Trognon, Harold Benoit, and Mahammad Ismayilzada* to use machine learning to quantify and compare the difficulty of identifying different polymer sequences, as described above. Using this information, we will assess some pitfalls with different encodings (different backbone: ‘0’ ~ ‘6’ or double-encoding: ‘2’ ~ ‘22’) and ultimately find a basis to encode information in these polymers (bulky elements ‘1’ ~ ‘2’ ~ ‘5’). 
 
 For a quick introduction on the concept of polymers in the context of digital storage, you may read the introduction of our report or [this article](https://actu.epfl.ch/news/bacterial-nanopores-open-the-future-of-data-stor-6/) for a lighter read.
 
@@ -30,15 +30,6 @@ pip install -r requirements.txt
 
 ## Project
 
-### Outline
-
-For each research question, the structure is as follows:
-
-* Exploratory data analysis
-* Testing different models
-* Hyperparameter tuning for the best model
-
-
 ### Exploratory Data Analysis
 
 Our data is electrical relative current time series. Here are its specificities:
@@ -46,6 +37,8 @@ Our data is electrical relative current time series. Here are its specificities:
 * The lengths of the relative current time-series span a wide range of values, ranging from 0.3 milliseconds to  2 seconds. One reason is that some polymers get stuck in the nanopore and do some sort of back and forth in it before finally leaving.
 * Two events are indistinguishable for the human eye. Both in time series, autocorrelation, and frequency domain representations.
 * The relative current sensor has a slow response time in its measurements. Thus the relative current measured is highly dependent on the speed of the polymer passing through. 
+
+
 
 ### Data processing
 
