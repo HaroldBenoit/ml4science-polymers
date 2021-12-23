@@ -1,0 +1,300 @@
+epoch=0/150, loss=0.290415, accuracy=87.8312
+epoch=0/150, test_accuracy=92.4038
+epoch=1/150, loss=0.168103, accuracy=93.1460
+epoch=1/150, test_accuracy=93.7792
+epoch=2/150, loss=0.152129, accuracy=93.7327
+epoch=2/150, test_accuracy=94.3722
+epoch=3/150, loss=0.141699, accuracy=94.2846
+epoch=3/150, test_accuracy=94.5489
+epoch=4/150, loss=0.138918, accuracy=94.4140
+epoch=4/150, test_accuracy=94.6625
+epoch=5/150, loss=0.133623, accuracy=94.6884
+epoch=5/150, test_accuracy=94.9274
+epoch=6/150, loss=0.131097, accuracy=94.7483
+epoch=6/150, test_accuracy=95.1167
+epoch=7/150, loss=0.129952, accuracy=94.8997
+epoch=7/150, test_accuracy=95.0789
+epoch=8/150, loss=0.129915, accuracy=94.8366
+epoch=8/150, test_accuracy=94.7634
+epoch=9/150, loss=0.125330, accuracy=95.0385
+epoch=9/150, test_accuracy=94.8517
+epoch=10/150, loss=0.125176, accuracy=94.9375
+epoch=10/150, test_accuracy=95.1672
+epoch=11/150, loss=0.125186, accuracy=95.0132
+epoch=11/150, test_accuracy=95.2429
+epoch=12/150, loss=0.125958, accuracy=94.8934
+epoch=12/150, test_accuracy=94.9401
+epoch=13/150, loss=0.123826, accuracy=95.0038
+epoch=13/150, test_accuracy=95.0158
+epoch=14/150, loss=0.122455, accuracy=95.0921
+epoch=14/150, test_accuracy=95.2177
+epoch=15/150, loss=0.121263, accuracy=95.1457
+epoch=15/150, test_accuracy=94.9527
+epoch=16/150, loss=0.123973, accuracy=95.0479
+epoch=16/150, test_accuracy=95.0536
+epoch=17/150, loss=0.122232, accuracy=95.1741
+epoch=17/150, test_accuracy=95.1420
+epoch=18/150, loss=0.120542, accuracy=95.2498
+epoch=18/150, test_accuracy=94.8391
+epoch=19/150, loss=0.122138, accuracy=95.1300
+epoch=19/150, test_accuracy=95.1924
+epoch=20/150, loss=0.120005, accuracy=95.1426
+epoch=20/150, test_accuracy=94.8391
+epoch=21/150, loss=0.122244, accuracy=95.0196
+epoch=21/150, test_accuracy=94.9401
+epoch=22/150, loss=0.118670, accuracy=95.3160
+epoch=22/150, test_accuracy=95.1924
+epoch=23/150, loss=0.119460, accuracy=95.2813
+epoch=23/150, test_accuracy=95.2681
+epoch=24/150, loss=0.119669, accuracy=95.2151
+epoch=24/150, test_accuracy=95.1293
+epoch=25/150, loss=0.119087, accuracy=95.3381
+epoch=25/150, test_accuracy=95.0284
+epoch=26/150, loss=0.120426, accuracy=95.2183
+epoch=26/150, test_accuracy=95.0915
+epoch=27/150, loss=0.119877, accuracy=95.2593
+epoch=27/150, test_accuracy=95.2429
+epoch=28/150, loss=0.117893, accuracy=95.3823
+epoch=28/150, test_accuracy=95.0158
+epoch=29/150, loss=0.119080, accuracy=95.2309
+epoch=29/150, test_accuracy=94.6625
+epoch=30/150, loss=0.118792, accuracy=95.2719
+epoch=30/150, test_accuracy=95.1798
+epoch=31/150, loss=0.120883, accuracy=95.1930
+epoch=31/150, test_accuracy=94.9653
+epoch=32/150, loss=0.118668, accuracy=95.3097
+epoch=32/150, test_accuracy=95.2808
+epoch=33/150, loss=0.116358, accuracy=95.4359
+epoch=33/150, test_accuracy=95.2681
+epoch=34/150, loss=0.120986, accuracy=95.2498
+epoch=34/150, test_accuracy=95.3060
+epoch=35/150, loss=0.120442, accuracy=95.1710
+epoch=35/150, test_accuracy=95.2177
+epoch=36/150, loss=0.115314, accuracy=95.4454
+epoch=36/150, test_accuracy=94.9905
+epoch=37/150, loss=0.117866, accuracy=95.2940
+epoch=37/150, test_accuracy=95.0410
+epoch=38/150, loss=0.116036, accuracy=95.4801
+epoch=38/150, test_accuracy=95.2177
+epoch=39/150, loss=0.118515, accuracy=95.2593
+epoch=39/150, test_accuracy=95.3565
+epoch=40/150, loss=0.117924, accuracy=95.3444
+epoch=40/150, test_accuracy=95.1798
+epoch=41/150, loss=0.116387, accuracy=95.3697
+epoch=41/150, test_accuracy=94.7382
+epoch=42/150, loss=0.117269, accuracy=95.3697
+epoch=42/150, test_accuracy=94.8896
+epoch=43/150, loss=0.116484, accuracy=95.4738
+epoch=43/150, test_accuracy=95.0915
+epoch=44/150, loss=0.115711, accuracy=95.3350
+epoch=44/150, test_accuracy=95.2050
+epoch=45/150, loss=0.116440, accuracy=95.3160
+epoch=45/150, test_accuracy=95.2934
+epoch=46/150, loss=0.116060, accuracy=95.4328
+epoch=46/150, test_accuracy=95.3060
+epoch=47/150, loss=0.117323, accuracy=95.4264
+epoch=47/150, test_accuracy=95.1672
+epoch=48/150, loss=0.114749, accuracy=95.4643
+epoch=48/150, test_accuracy=95.0536
+epoch=49/150, loss=0.117204, accuracy=95.3571
+epoch=49/150, test_accuracy=94.8013
+epoch=50/150, loss=0.117898, accuracy=95.3728
+epoch=50/150, test_accuracy=95.1041
+epoch=51/150, loss=0.115661, accuracy=95.3160
+epoch=51/150, test_accuracy=95.2050
+epoch=52/150, loss=0.116555, accuracy=95.3886
+epoch=52/150, test_accuracy=95.2050
+epoch=53/150, loss=0.117833, accuracy=95.2593
+epoch=53/150, test_accuracy=94.9274
+epoch=54/150, loss=0.113408, accuracy=95.5463
+epoch=54/150, test_accuracy=95.1167
+epoch=55/150, loss=0.116429, accuracy=95.3634
+epoch=55/150, test_accuracy=95.2934
+epoch=56/150, loss=0.117347, accuracy=95.3350
+epoch=56/150, test_accuracy=95.2681
+epoch=57/150, loss=0.113935, accuracy=95.5589
+epoch=57/150, test_accuracy=95.1546
+epoch=58/150, loss=0.113763, accuracy=95.5432
+epoch=58/150, test_accuracy=95.3186
+epoch=59/150, loss=0.113894, accuracy=95.5116
+epoch=59/150, test_accuracy=95.4196
+epoch=60/150, loss=0.114744, accuracy=95.5148
+epoch=60/150, test_accuracy=95.0284
+epoch=61/150, loss=0.115104, accuracy=95.4611
+epoch=61/150, test_accuracy=94.8644
+epoch=62/150, loss=0.116366, accuracy=95.3571
+epoch=62/150, test_accuracy=95.4069
+epoch=63/150, loss=0.115171, accuracy=95.4138
+epoch=63/150, test_accuracy=95.1293
+epoch=64/150, loss=0.114779, accuracy=95.3444
+epoch=64/150, test_accuracy=95.4322
+epoch=65/150, loss=0.113555, accuracy=95.4769
+epoch=65/150, test_accuracy=95.0158
+epoch=66/150, loss=0.114248, accuracy=95.4107
+epoch=66/150, test_accuracy=95.1546
+epoch=67/150, loss=0.114796, accuracy=95.4422
+epoch=67/150, test_accuracy=95.3312
+epoch=68/150, loss=0.112603, accuracy=95.5652
+epoch=68/150, test_accuracy=95.1420
+epoch=69/150, loss=0.114948, accuracy=95.3413
+epoch=69/150, test_accuracy=95.1798
+epoch=70/150, loss=0.115313, accuracy=95.3381
+epoch=70/150, test_accuracy=95.1167
+epoch=71/150, loss=0.116579, accuracy=95.3066
+epoch=71/150, test_accuracy=94.9527
+epoch=72/150, loss=0.115060, accuracy=95.3854
+epoch=72/150, test_accuracy=95.2429
+epoch=73/150, loss=0.113490, accuracy=95.5242
+epoch=73/150, test_accuracy=95.2555
+epoch=74/150, loss=0.112002, accuracy=95.5621
+epoch=74/150, test_accuracy=95.2429
+epoch=75/150, loss=0.113339, accuracy=95.4769
+epoch=75/150, test_accuracy=95.3817
+epoch=76/150, loss=0.113430, accuracy=95.5242
+epoch=76/150, test_accuracy=95.2177
+epoch=77/150, loss=0.112493, accuracy=95.5463
+epoch=77/150, test_accuracy=95.3060
+epoch=78/150, loss=0.114776, accuracy=95.4674
+epoch=78/150, test_accuracy=95.2429
+epoch=79/150, loss=0.115820, accuracy=95.3728
+epoch=79/150, test_accuracy=95.4196
+epoch=80/150, loss=0.112309, accuracy=95.5116
+epoch=80/150, test_accuracy=95.1798
+epoch=81/150, loss=0.112477, accuracy=95.4580
+epoch=81/150, test_accuracy=95.4953
+epoch=82/150, loss=0.112285, accuracy=95.5116
+epoch=82/150, test_accuracy=95.4574
+epoch=83/150, loss=0.112795, accuracy=95.5495
+epoch=83/150, test_accuracy=95.3691
+epoch=84/150, loss=0.116275, accuracy=95.3097
+epoch=84/150, test_accuracy=95.3060
+epoch=85/150, loss=0.113492, accuracy=95.5179
+epoch=85/150, test_accuracy=95.2429
+epoch=86/150, loss=0.117048, accuracy=95.1678
+epoch=86/150, test_accuracy=95.0410
+epoch=87/150, loss=0.113921, accuracy=95.5842
+epoch=87/150, test_accuracy=95.3186
+epoch=88/150, loss=0.113173, accuracy=95.4233
+epoch=88/150, test_accuracy=95.1546
+epoch=89/150, loss=0.113364, accuracy=95.4328
+epoch=89/150, test_accuracy=95.2808
+epoch=90/150, loss=0.111213, accuracy=95.5715
+epoch=90/150, test_accuracy=95.3312
+epoch=91/150, loss=0.112621, accuracy=95.4611
+epoch=91/150, test_accuracy=95.1924
+epoch=92/150, loss=0.112692, accuracy=95.5116
+epoch=92/150, test_accuracy=95.2808
+epoch=93/150, loss=0.112229, accuracy=95.4580
+epoch=93/150, test_accuracy=95.2808
+epoch=94/150, loss=0.112033, accuracy=95.6125
+epoch=94/150, test_accuracy=95.0536
+epoch=95/150, loss=0.111465, accuracy=95.5305
+epoch=95/150, test_accuracy=95.3943
+epoch=96/150, loss=0.112181, accuracy=95.4801
+epoch=96/150, test_accuracy=95.3186
+epoch=97/150, loss=0.111969, accuracy=95.5526
+epoch=97/150, test_accuracy=95.3565
+epoch=98/150, loss=0.112496, accuracy=95.4801
+epoch=98/150, test_accuracy=95.2177
+epoch=99/150, loss=0.109800, accuracy=95.6472
+epoch=99/150, test_accuracy=95.3817
+epoch=100/150, loss=0.111418, accuracy=95.5558
+epoch=100/150, test_accuracy=95.1167
+epoch=101/150, loss=0.111255, accuracy=95.5305
+epoch=101/150, test_accuracy=95.0536
+epoch=102/150, loss=0.110833, accuracy=95.5211
+epoch=102/150, test_accuracy=95.1798
+epoch=103/150, loss=0.110786, accuracy=95.5842
+epoch=103/150, test_accuracy=95.2177
+epoch=104/150, loss=0.112427, accuracy=95.5652
+epoch=104/150, test_accuracy=95.2050
+epoch=105/150, loss=0.113613, accuracy=95.4990
+epoch=105/150, test_accuracy=95.2429
+epoch=106/150, loss=0.109519, accuracy=95.6252
+epoch=106/150, test_accuracy=95.3943
+epoch=107/150, loss=0.110859, accuracy=95.5810
+epoch=107/150, test_accuracy=95.3186
+epoch=108/150, loss=0.111757, accuracy=95.6662
+epoch=108/150, test_accuracy=94.8013
+epoch=109/150, loss=0.114749, accuracy=95.2750
+epoch=109/150, test_accuracy=95.0032
+epoch=110/150, loss=0.112444, accuracy=95.4738
+epoch=110/150, test_accuracy=95.3060
+epoch=111/150, loss=0.110448, accuracy=95.5621
+epoch=111/150, test_accuracy=95.3817
+epoch=112/150, loss=0.112788, accuracy=95.4927
+epoch=112/150, test_accuracy=95.0662
+epoch=113/150, loss=0.112170, accuracy=95.6094
+epoch=113/150, test_accuracy=95.4826
+epoch=114/150, loss=0.112421, accuracy=95.5242
+epoch=114/150, test_accuracy=95.4448
+epoch=115/150, loss=0.112037, accuracy=95.5463
+epoch=115/150, test_accuracy=95.3565
+epoch=116/150, loss=0.109658, accuracy=95.5936
+epoch=116/150, test_accuracy=95.1420
+epoch=117/150, loss=0.110994, accuracy=95.5621
+epoch=117/150, test_accuracy=95.4322
+epoch=118/150, loss=0.111988, accuracy=95.6125
+epoch=118/150, test_accuracy=95.1672
+epoch=119/150, loss=0.112736, accuracy=95.4738
+epoch=119/150, test_accuracy=95.3438
+epoch=120/150, loss=0.113210, accuracy=95.5305
+epoch=120/150, test_accuracy=95.5079
+epoch=121/150, loss=0.111209, accuracy=95.4958
+epoch=121/150, test_accuracy=95.3186
+epoch=122/150, loss=0.108979, accuracy=95.6725
+epoch=122/150, test_accuracy=95.3438
+epoch=123/150, loss=0.111101, accuracy=95.5305
+epoch=123/150, test_accuracy=95.5584
+epoch=124/150, loss=0.110223, accuracy=95.5936
+epoch=124/150, test_accuracy=95.0789
+epoch=125/150, loss=0.112067, accuracy=95.5778
+epoch=125/150, test_accuracy=95.3565
+epoch=126/150, loss=0.110556, accuracy=95.5778
+epoch=126/150, test_accuracy=95.1672
+epoch=127/150, loss=0.110459, accuracy=95.5368
+epoch=127/150, test_accuracy=95.3060
+epoch=128/150, loss=0.112817, accuracy=95.4674
+epoch=128/150, test_accuracy=95.2681
+epoch=129/150, loss=0.109195, accuracy=95.7356
+epoch=129/150, test_accuracy=95.4826
+epoch=130/150, loss=0.109379, accuracy=95.5684
+epoch=130/150, test_accuracy=95.2681
+epoch=131/150, loss=0.113396, accuracy=95.5368
+epoch=131/150, test_accuracy=95.4448
+epoch=132/150, loss=0.110655, accuracy=95.5558
+epoch=132/150, test_accuracy=95.3312
+epoch=133/150, loss=0.111026, accuracy=95.6062
+epoch=133/150, test_accuracy=95.5331
+epoch=134/150, loss=0.110344, accuracy=95.6157
+epoch=134/150, test_accuracy=95.2303
+epoch=135/150, loss=0.108770, accuracy=95.6472
+epoch=135/150, test_accuracy=95.3691
+epoch=136/150, loss=0.109267, accuracy=95.6157
+epoch=136/150, test_accuracy=95.2808
+epoch=137/150, loss=0.111208, accuracy=95.5116
+epoch=137/150, test_accuracy=95.3312
+epoch=138/150, loss=0.111178, accuracy=95.4674
+epoch=138/150, test_accuracy=95.5710
+epoch=139/150, loss=0.108383, accuracy=95.7356
+epoch=139/150, test_accuracy=94.8265
+epoch=140/150, loss=0.112120, accuracy=95.5495
+epoch=140/150, test_accuracy=95.2555
+epoch=141/150, loss=0.109824, accuracy=95.6378
+epoch=141/150, test_accuracy=95.3438
+epoch=142/150, loss=0.110817, accuracy=95.5715
+epoch=142/150, test_accuracy=95.4700
+epoch=143/150, loss=0.110293, accuracy=95.6252
+epoch=143/150, test_accuracy=95.2681
+epoch=144/150, loss=0.112292, accuracy=95.5684
+epoch=144/150, test_accuracy=95.0410
+epoch=145/150, loss=0.112460, accuracy=95.4138
+epoch=145/150, test_accuracy=95.3438
+epoch=146/150, loss=0.111608, accuracy=95.5905
+epoch=146/150, test_accuracy=95.5079
+epoch=147/150, loss=0.110694, accuracy=95.5148
+epoch=147/150, test_accuracy=95.5584
+epoch=148/150, loss=0.110766, accuracy=95.5211
+epoch=148/150, test_accuracy=95.3943
+epoch=149/150, loss=0.108500, accuracy=95.6441
+epoch=149/150, test_accuracy=95.5331
